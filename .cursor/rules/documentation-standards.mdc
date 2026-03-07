@@ -61,7 +61,6 @@ Las especificaciones de IA se refieren a los documentos que explican a los agent
       ```
 
 - Ejemplo incorrecto:
-
    - En archivo de código
       ```ts
       // Calculate order total ❌ (idioma incorrecto)

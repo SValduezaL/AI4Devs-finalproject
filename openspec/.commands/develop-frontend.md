@@ -38,7 +38,7 @@ Al recibir retroalimentación o correcciones del usuario:
 
 2. **Extrae aprendizajes**: Determina qué insights específicos, patrones o mejores prácticas fueron revelados. Considera si las reglas existentes necesitan clarificación o si nuevas convenciones deben documentarse.
 
-3. **Revisa reglas relevantes**: Verifica las reglas de desarrollo existentes (ej., `.openspecs/base-standards.mdc`) para identificar qué reglas se relacionan con la retroalimentación y podrían mejorarse.
+3. **Revisa reglas relevantes**: Verifica las reglas de desarrollo existentes (ej., `.cursor/rules/base-standards.mdc`) para identificar qué reglas se relacionan con la retroalimentación y podrían mejorarse.
 
 4. **Propón actualizaciones de reglas** (si aplica):
     - Establece claramente qué regla(s) deben actualizarse

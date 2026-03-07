@@ -228,7 +228,7 @@ Si hay issues **CRITICAL**: resuelve antes de continuar. **WARNING**: evalúa si
 La IA revisa qué documentación necesita actualización:
 - `openspec/specs/data-model.md` → campo `webhookUrl` en `Ecommerce`
 - `openspec/specs/api-spec-example.yml` → si hay cambio de API pública
-- `openspec/specs/backend-standards.mdc` → si se introduce un patrón nuevo
+- `.cursor/rules/backend-standards.mdc` → si se introduce un patrón nuevo
 
 ### Paso 7: Actualizar Memory Bank
 
@@ -496,8 +496,8 @@ El comando `/opsx-verify` es el "code review" automatizado. Un CRITICAL signific
 | Glosario del dominio | `memory-bank/project-context/domain-glossary.md` |
 | ADRs | `memory-bank/architecture/` |
 | Notas de sesiones | `memory-bank/sessions/` |
-| Standards backend | `openspec/specs/backend-standards.mdc` |
-| Standards frontend | `openspec/specs/frontend-standards.mdc` |
+| Standards backend | `.cursor/rules/backend-standards.mdc` |
+| Standards frontend | `.cursor/rules/frontend-standards.mdc` |
 | Modelo de datos | `openspec/specs/data-model.md` |
 | Changes activos | `openspec/changes/` |
 | Changes archivados | `openspec/changes/archive/` |

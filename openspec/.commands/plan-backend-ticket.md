@@ -52,7 +52,7 @@ Pasos detallados, típicamente:
     2. Obtén últimos cambios: `git pull origin [base-branch]`
     3. Crea nueva rama: `git checkout -b [branch-name]`
     4. Verifica creación de rama: `git branch`
-- **Notas**: Este debe ser el PRIMER paso antes de cualquier cambio de código. Consulta la sección "Development Workflow" de `openspecs/specs/backend-standards.mdc` para convenciones específicas de nomenclatura de ramas y reglas de flujo de trabajo.
+- **Notas**: Este debe ser el PRIMER paso antes de cualquier cambio de código. Consulta la sección "Development Workflow" de `.cursor/rules/backend-standards.mdc` para convenciones específicas de nomenclatura de ramas y reglas de flujo de trabajo.
 
 #### **Paso N: [Nombre de Acción]**
 
@@ -90,7 +90,7 @@ Ejemplo de buena estructura:
         - Cambios en estándares/bibliotecas/config → Actualizar archivos relevantes `*-standards.mdc`
         - Cambios en arquitectura → Actualizar documentación de arquitectura relevante
     3. **Actualizar Documentación**: Para cada archivo afectado:
-        - Actualizar contenido en español (según `documentation-standards.mdc`)
+        - Actualizar contenido en español (según `.cursor/rules/documentation-standards.mdc`)
         - Mantener consistencia con estructura de documentación existente
         - Asegurar formato apropiado
     4. **Verificar Documentación**:
@@ -98,7 +98,7 @@ Ejemplo de buena estructura:
         - Verificar que la documentación siga la estructura establecida
     5. **Reportar Actualizaciones**: Documentar qué archivos fueron actualizados y qué cambios se hicieron
 - **Referencias**:
-    - Seguir proceso descrito en `openspecs/specs/documentation-standards.mdc`
+    - Seguir proceso descrito en `.cursor/rules/documentation-standards.mdc`
     - Toda la documentación debe escribirse en español
 - **Notas**: Este paso es OBLIGATORIO antes de considerar la implementación completa. No omitas actualizaciones de documentación.
 

@@ -3,7 +3,7 @@
 **Estado**: ✅ Aceptada  
 **Fecha**: 2026-01-30  
 **Decidido en**: Fase 4 - Diseño de Alto Nivel  
-**Implementado en**: Pendiente (diseño completado)  
+**Implementado en**: ✅ apps/api/ (NestJS) + apps/worker/ (Node.js puro)  
 **Reemplaza a**: N/A
 
 ---
@@ -31,11 +31,17 @@ Adresles es un MVP que necesita validar el producto en el mercado rápidamente. 
 **Implementar un Monolito Modular** como arquitectura inicial, con clara separación de dominios internos que permita extracción futura a microservicios si es necesario.
 
 La aplicación se estructura en módulos NestJS bien delimitados:
-- **Conversations** (módulo núcleo)
+- **Mock** (módulo de simulación MVP — orquesta el flujo completo)
+- **Admin** (endpoints del Dashboard Admin)
+- **Conversations**
 - **Orders**
-- **Addresses**
 - **Users**
 - **Stores**
+- **EcommerceSync**
+- **Queue** (BullMQ producer)
+- **Prisma** (acceso compartido a la BD)
+
+> **Nota**: El módulo `Addresses` fue previsto en el diseño inicial pero no implementado como módulo independiente en el MVP. La lógica de direcciones reside en el Worker y en el servicio de conversaciones.
 
 ---
 
@@ -91,45 +97,89 @@ La aplicación se estructura en módulos NestJS bien delimitados:
 
 ## Implementación
 
-### Cambios Requeridos
+### Estructura Implementada
 
 ```
-apps/api/                         # Monolito modular NestJS
+apps/api/                         # Monolito modular NestJS (HTTP + SSE)
 ├── src/
-│   ├── conversations/            # Módulo Conversations (bounded context)
-│   │   ├── domain/
-│   │   ├── application/
-│   │   ├── infrastructure/
-│   │   └── conversations.module.ts
+│   ├── prisma/                   # PrismaModule + PrismaService
+│   │   ├── prisma.module.ts
+│   │   └── prisma.service.ts
 │   │
-│   ├── orders/                   # Módulo Orders
-│   │   └── orders.module.ts
+│   ├── queue/                    # QueueModule (BullMQ producer)
+│   │   ├── queue.module.ts
+│   │   └── queue.service.ts
 │   │
-│   ├── addresses/                # Módulo Addresses
-│   │   └── addresses.module.ts
+│   ├── mock/                     # MockModule — simulación de pedidos eCommerce (MVP)
+│   │   ├── mock.module.ts
+│   │   ├── mock-orders.controller.ts
+│   │   ├── mock-orders.service.ts
+│   │   ├── mock-conversations.controller.ts  # SSE endpoint (@Sse)
+│   │   ├── mock-conversations.service.ts
+│   │   ├── mock-sse.service.ts              # Redis psubscribe + RxJS Subject
+│   │   └── dto/
 │   │
-│   ├── users/                    # Módulo Users
-│   │   └── users.module.ts
+│   ├── admin/                    # AdminModule — endpoints Dashboard
+│   │   ├── admin.module.ts
+│   │   ├── admin.controller.ts
+│   │   └── admin.service.ts
 │   │
-│   ├── stores/                   # Módulo Stores
-│   │   └── stores.module.ts
+│   ├── conversations/            # ConversationsModule
+│   │   ├── conversations.module.ts
+│   │   └── conversations.service.ts
 │   │
-│   └── app.module.ts             # Módulo raíz que importa todos
+│   ├── orders/                   # OrdersModule
+│   │   ├── orders.module.ts
+│   │   └── orders.service.ts
+│   │
+│   ├── users/                    # UsersModule
+│   │   ├── users.module.ts
+│   │   └── users.service.ts
+│   │
+│   ├── stores/                   # StoresModule
+│   │   ├── stores.module.ts
+│   │   └── stores.service.ts
+│   │
+│   ├── ecommerce-sync/           # EcommerceSyncModule
+│   │   ├── ecommerce-sync.module.ts
+│   │   └── ecommerce-sync.service.ts
+│   │
+│   ├── shared/                   # Utilidades compartidas
+│   │   └── fee.utils.ts
+│   │
+│   ├── app.module.ts             # AppModule: imports [ConfigModule, PrismaModule,
+│   │                             #   QueueModule, MockModule, AdminModule]
+│   └── main.ts
 
-apps/worker/                      # Worker separado (BullMQ)
+apps/worker/                      # Worker BullMQ (Node.js PURO — sin NestJS)
 └── src/
-    └── processors/
-        └── conversation.processor.ts
+    ├── processors/
+    │   └── conversation.processor.ts   # 9 fases: máquina de estados del journey
+    ├── services/
+    │   └── address.service.ts          # Google Maps + interpretUserIntent
+    ├── dynamodb/
+    │   └── dynamodb.service.ts         # saveMessage, getMessages, estados
+    ├── redis-publisher.ts              # publishConversationUpdate/Complete
+    └── main.ts                         # 2 Workers BullMQ (process-conversation,
+                                        #   process-response), concurrency: 2
+
+packages/prisma-db/               # Schema Prisma compartido (API + Worker)
+├── schema.prisma                 # 17 modelos, 14 enums
+├── seed.ts
+├── migrations/
+└── generated/                    # PrismaClient generado
 ```
+
+> **Decisión de implementación**: Los módulos NestJS del MVP no implementan la subdivisión DDD en capas (`domain/`, `application/`, `infrastructure/`, `presentation/`). La estructura es plana dentro de cada módulo (controller + service + dto). Esta simplificación es apropiada para el MVP y puede refactorizarse cuando la complejidad lo justifique.
 
 ### Separación Crítica: Worker vs API
 
 Para mitigar el problema de escalado del módulo Conversations (que consume OpenAI intensivamente), se separa en un **Worker independiente**:
 
-- **API**: HTTP endpoints, validación, orquestación
-- **Worker**: Procesamiento de conversaciones IA (BullMQ + Redis)
+- **API** (`apps/api/`): NestJS 10 — HTTP endpoints, validación, SSE, encolado de jobs
+- **Worker** (`apps/worker/`): **Node.js puro sin NestJS** — procesamiento de conversaciones IA (BullMQ + OpenAI + DynamoDB)
 
-Esto permite escalar horizontalmente solo el Worker si la carga de OpenAI aumenta.
+El Worker es Node.js puro por decisión pragmática: no necesita HTTP, inyección de dependencias NestJS ni decoradores. Instancia directamente `Worker` de BullMQ y llama a los servicios necesarios. Esto permite escalar horizontalmente solo el Worker si la carga de OpenAI aumenta.
 
 ### Principios de Diseño Modular
 
@@ -204,8 +254,16 @@ Considerar extracción cuando se cumpla **al menos 2** de estos criterios:
 - Separación de Worker confirmada para mitigar problema de escalado de OpenAI
 - Límites de módulos alineados con dominios DDD del proyecto
 
+### 2026-03-07: Revisión post-implementación MVP
+
+- Worker implementado como **Node.js puro** (sin NestJS), no como módulo NestJS separado
+- Estructura de módulos NestJS implementada de forma plana (sin subcarpetas `domain/`, `application/`)
+- Módulo `Addresses` no implementado como módulo NestJS independiente; lógica de direcciones en el Worker
+- Módulos nuevos respecto al diseño inicial: `Mock`, `Admin`, `EcommerceSync`, `Queue`, `Prisma`
+- Package `packages/prisma-db/` implementado (ADR-009) como capa de persistencia compartida entre API y Worker
+
 ---
 
 **Creado por**: Sergio  
-**Última actualización**: 2026-02-07  
+**Última actualización**: 2026-03-07  
 **Próxima revisión**: Tras 6 meses en producción o cuando se cumplan criterios de extracción

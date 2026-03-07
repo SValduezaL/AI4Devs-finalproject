@@ -1,6 +1,6 @@
 ---
-description: Estándares de desarrollo backend, mejores prácticas y convenciones para Adresles (proyecto SaaS B2B2C), Node.js/TypeScript/NestJS, arquitectura modular DDD, Supabase (PostgreSQL) + DynamoDB, OpenAI GPT-4, incluyendo Diseño Dirigido por el Dominio, principios SOLID, patrones de arquitectura, diseño de API y prácticas de pruebas
-globs: ["backend/src/**/*.ts", "apps/api/src/**/*.ts", "backend/prisma/**/*.{prisma,ts}", "apps/api/prisma/**/*.{prisma,ts}", "backend/jest.config.js", "backend/tsconfig.json", "backend/serverless.yml", "backend/package.json"]
+description: Estándares de desarrollo backend, mejores prácticas y convenciones para Adresles (SaaS B2B2C). Stack real: NestJS 10 (API) + Node.js puro (Worker BullMQ) + Prisma 5.22 (packages/prisma-db) + PostgreSQL + DynamoDB + Redis + OpenAI gpt-4o-mini. Arquitectura modular plana (sin capas DDD explícitas en MVP). Incluye patrones de validación, SSE, BullMQ, testing y deployment.
+globs: ["apps/api/src/**/*.ts", "apps/api/jest.config.js", "apps/api/tsconfig.json", "apps/api/package.json", "apps/worker/src/**/*.ts", "apps/worker/jest.config.js", "apps/worker/tsconfig.json", "apps/worker/package.json", "packages/prisma-db/**/*.{prisma,ts}", "packages/shared-types/src/**/*.ts"]
 alwaysApply: true
 ---
 
@@ -73,42 +73,63 @@ alwaysApply: true
 
 ## Visión General
 
-Este documento describe las mejores prácticas, convenciones y estándares utilizados en la aplicación backend del Proyecto Final del Máster AI4Devs. El backend sigue principios de Diseño Dirigido por el Dominio (DDD) e implementa una arquitectura en capas para asegurar consistencia, mantenibilidad y escalabilidad del código.
+Este documento describe las mejores prácticas, convenciones y estándares del backend de Adresles. El proyecto es un monorepo Turborepo/pnpm con dos apps backend y dos packages compartidos.
 
 ## Stack Tecnológico
 
+### Apps Backend
+
+| App | Runtime | Propósito |
+|-----|---------|-----------|
+| `apps/api/` | NestJS 10 + Express | HTTP endpoints + SSE (puerto 3000) |
+| `apps/worker/` | **Node.js puro** (sin NestJS) | BullMQ Worker — procesamiento asíncrono IA |
+
+> **Importante**: El Worker NO usa NestJS. Es un proceso Node.js que instancia `Worker` de BullMQ directamente, sin inyección de dependencias ni decoradores.
+
 ### Tecnologías Centrales
-- **Node.js**: Entorno de ejecución (v20 LTS)
-- **TypeScript**: Desarrollo con seguridad de tipos y modo estricto
-- **NestJS**: Framework backend modular (v10.x) - DDD-friendly
-- **Prisma**: ORM para Supabase (PostgreSQL)
-- **AWS SDK**: Cliente para DynamoDB (v3.x)
 
-### Base de Datos y ORM
-- **Supabase (PostgreSQL)**: Base de datos relacional con Auth, RLS y Realtime
-- **DynamoDB**: Base de datos NoSQL para mensajes de conversaciones (alta volumetría)
-- **Prisma Client**: Cliente de base de datos con seguridad de tipos para Supabase
-- **AWS SDK v3**: Cliente para operaciones DynamoDB
-- **Redis**: Cache + sistema de colas (BullMQ)
+| Tecnología | Versión | Uso |
+|-----------|---------|-----|
+| **Node.js** | 20 LTS | Runtime |
+| **TypeScript** | 5.x strict | Lenguaje principal |
+| **NestJS** | 10.x | Framework API (solo `apps/api/`) |
+| **Prisma** | 5.22.0 (pinned) | ORM — desde `packages/prisma-db/` |
+| **AWS SDK** | v3.x | Cliente DynamoDB |
+| **BullMQ** | 5.x | Colas de trabajos asíncronos |
+| **ioredis** | 5.x | Cliente Redis (colas + SSE pub/sub) |
+| **RxJS** | 7.x | Observable para SSE en la API |
+| **class-validator** | 0.14.x | Validación de DTOs |
+| **class-transformer** | 0.5.x | Transformación de payloads |
 
-### Servicios Externos Clave
-- **OpenAI API**: Motor conversacional (GPT-4) - Ver [ADR-004](../../memory-bank/architecture/004-openai-gpt4.md)
-- **Google Maps API**: Validación y normalización de direcciones
-- **Supabase**: PostgreSQL managed + Auth + RLS multi-tenant
-- **DynamoDB**: Mensajes de conversaciones con TTL automático
+### Packages Compartidos
+
+| Package | Nombre npm | Contenido |
+|---------|-----------|-----------|
+| `packages/prisma-db/` | `@adresles/prisma-db` | Schema Prisma 5.22, PrismaClient generado, migrations, seed |
+| `packages/shared-types/` | `@adresles/shared-types` | Interfaces de colas: `ProcessConversationJobData`, `ProcessResponseJobData`, `MockOrderContext` |
+
+### Base de Datos y Persistencia
+
+- **PostgreSQL 15**: Datos relacionales (17 modelos Prisma, 14 enums). En desarrollo: Docker Compose. En producción: Supabase.
+- **DynamoDB**: Mensajes de conversaciones (alta volumetría). PK: `conversation_id`, SK: `timestamp`, TTL 90 días. En desarrollo: `amazon/dynamodb-local` vía Docker.
+- **Redis 7**: Cache + colas BullMQ + SSE pub/sub. En desarrollo: Docker Compose.
+
+### Servicios Externos
+
+- **OpenAI API**: Motor conversacional — modelo **`gpt-4o-mini`** (ver [ADR-004](../../memory-bank/architecture/004-openai-gpt4.md))
+- **Google Maps API**: Validación y normalización de direcciones (en el Worker)
 
 ### Framework de Pruebas
-- **Jest**: Framework de pruebas con soporte para TypeScript (via `ts-jest`)
+- **Jest 29**: Framework de pruebas con soporte TypeScript (via `ts-jest`)
 - **@nestjs/testing**: Módulo de pruebas de NestJS para tests unitarios e integración
 - **supertest**: Pruebas HTTP de integración para controladores
 - **Umbral de Cobertura**: 90% para ramas, funciones, líneas y sentencias
 - **Ubicación de Pruebas**: Junto al código fuente, con el patrón `*.spec.ts` (ej. `orders.service.spec.ts`)
 
 ### Herramientas de Desarrollo
-- **ESLint v9**: Linting de código con formato de configuración plana (`eslint.config.js`)
+- **ESLint v9**: Linting con formato de configuración plana (`eslint.config.js`)
 - **@typescript-eslint v8**: Plugin y parser para TypeScript
-- **TypeScript Compiler**: Verificación de tipos y compilación
-- **Serverless Framework**: Soporte de despliegue en AWS Lambda
+- **pnpm 9 + Turborepo 2.3**: Gestor de monorepo
 
 ## Visión General de Arquitectura
 
@@ -123,107 +144,124 @@ El Diseño Dirigido por el Dominio es una metodología que se enfoca en modelar 
 
 ### Arquitectura en Capas
 
-El backend sigue una arquitectura DDD en capas:
+El MVP del backend usa una arquitectura **modular plana** en NestJS. Los módulos no implementan subcarpetas `domain/`, `application/`, `infrastructure/` en el MVP — la estructura es directa: Controller → Service → PrismaService/DynamoDB.
 
-**Capa de Presentación** (`src/presentation/`)
-- Los controladores manejan peticiones/respuestas HTTP
-- Las rutas definen endpoints de API
-- Los controladores usan servicios de la capa de Aplicación
+**Flujo estándar en la API**:
+```
+HTTP Request → Controller (@Get/@Post) → Service (@Injectable) → PrismaService + DynamoDB
+```
 
-**Capa de Aplicación** (`src/application/`)
-- Los servicios contienen lógica de negocio y orquestación
-- El validador maneja validación de entrada
-- Los servicios usan repositorios de la capa de Dominio
+**Flujo del Worker** (procesamiento asíncrono de IA):
+```
+BullMQ Job → conversation.processor.ts → address.service.ts (Google Maps)
+                                        → dynamodb.service.ts (mensajes)
+                                        → OpenAI gpt-4o-mini
+                                        → redis-publisher.ts (SSE pub/sub)
+```
 
-**Capa de Dominio** (`src/domain/`)
-- Los modelos definen entidades de negocio centrales
-- Las interfaces de repositorio definen contratos de acceso a datos
-- Lógica de negocio pura sin dependencias externas
-
-**Capa de Infraestructura** (implícita)
-- Prisma ORM maneja operaciones de base de datos
-- Implementaciones de repositorio (vía Prisma) satisfacen interfaces de dominio
+> **Nota sobre DDD**: Los principios DDD (entidades, value objects, repositorios, bounded contexts) son la dirección arquitectural del proyecto, pero en el MVP se aplican de forma simplificada. Se documentan los principios para guiar el crecimiento del proyecto, pero la estructura de carpetas actual no implementa las subcapas formales. Ver [ADR-001](../../memory-bank/architecture/001-monolith-modular.md).
 
 ### Estructura del Proyecto
 
 ```
-apps/api/src/                     # Backend NestJS (Monolito Modular)
-├── conversations/                # Bounded Context: Conversations (NÚCLEO)
-│   ├── domain/
-│   │   ├── entities/
-│   │   ├── value-objects/
-│   │   └── repositories/
-│   ├── application/
-│   │   ├── use-cases/
-│   │   └── dtos/
-│   ├── infrastructure/
-│   │   ├── repositories/
-│   │   ├── openai/
-│   │   └── websockets/
-│   ├── presentation/
-│   │   └── controllers/
-│   └── conversations.module.ts   # Módulo NestJS
+# Monorepo (pnpm 9 + Turborepo 2.3)
+├── apps/
+│   ├── api/                      # NestJS 10 — Backend modular (HTTP + SSE)
+│   ├── worker/                   # Node.js puro — BullMQ Worker (IA)
+│   └── web-admin/                # Next.js 16 — Dashboard Admin
 │
-├── orders/                       # Bounded Context: Orders
-│   ├── domain/
-│   ├── application/
-│   ├── infrastructure/
-│   ├── presentation/
-│   └── orders.module.ts
+├── packages/
+│   ├── prisma-db/                # @adresles/prisma-db — Schema + Client + seed
+│   └── shared-types/             # @adresles/shared-types — Interfaces de colas
 │
-├── addresses/                    # Bounded Context: Addresses
-│   ├── domain/
-│   ├── application/
-│   ├── infrastructure/
-│   │   └── google-maps/
-│   ├── presentation/
-│   └── addresses.module.ts
+├── infrastructure/
+│   └── docker/
+│       └── docker-compose.yml    # Redis 7, DynamoDB-local, PostgreSQL 15
 │
-├── users/                        # Bounded Context: Users
-│   └── users.module.ts
-│
-├── stores/                       # Bounded Context: Stores
-│   └── stores.module.ts
-│
-├── shared/                       # Código compartido
-│   ├── filters/                  # Exception filters
-│   ├── guards/                   # Auth guards
-│   ├── interceptors/             # Logging, transform
-│   └── decorators/
-│
-├── infrastructure/               # Servicios de infraestructura
-│   ├── supabase/
-│   │   ├── supabase.service.ts
-│   │   └── supabase.config.ts
-│   ├── dynamodb/
-│   │   ├── dynamodb.service.ts
-│   │   └── dynamodb.config.ts
-│   └── redis/
-│       └── redis.service.ts
-│
-├── app.module.ts                 # Módulo raíz NestJS
-└── main.ts                       # Entry point
-apps/worker/src/                  # Worker BullMQ (procesamiento asíncrono)
-└── processors/
-    └── conversation.processor.ts # Procesa jobs de conversaciones IA
+├── package.json                  # Root (monorepo)
+├── pnpm-workspace.yaml
+└── turbo.json
 
-apps/api/prisma/
-├── schema.prisma                 # Esquema de base de datos Supabase
-└── migrations/                   # Migraciones de Supabase
+# apps/api/src/ — Backend NestJS
+├── prisma/
+│   ├── prisma.module.ts          # PrismaModule (global)
+│   └── prisma.service.ts         # PrismaService extiende PrismaClient de @adresles/prisma-db
+│
+├── queue/
+│   ├── queue.module.ts
+│   └── queue.service.ts          # addProcessConversationJob(), addProcessResponseJob()
+│
+├── mock/                         # MockModule — simulación de pedidos eCommerce (MVP)
+│   ├── mock.module.ts            # imports: StoresModule, UsersModule, OrdersModule,
+│   │                             #          ConversationsModule, EcommerceSyncModule
+│   ├── mock-orders.controller.ts
+│   ├── mock-orders.service.ts
+│   ├── mock-conversations.controller.ts  # @Sse endpoint (tiempo real)
+│   ├── mock-conversations.service.ts
+│   ├── mock-sse.service.ts               # Redis psubscribe + RxJS Subject
+│   └── dto/
+│       ├── create-mock-order.dto.ts
+│       └── mock-conversation-reply.dto.ts
+│
+├── admin/                        # AdminModule — Dashboard Admin endpoints
+│   ├── admin.module.ts           # imports: PrismaModule, MockModule
+│   ├── admin.controller.ts       # GET /admin/orders, /users, /stores,
+│   │                             #     /conversations/:id/messages
+│   └── admin.service.ts
+│
+├── conversations/
+│   ├── conversations.module.ts
+│   └── conversations.service.ts
+│
+├── orders/
+│   ├── orders.module.ts
+│   └── orders.service.ts
+│
+├── users/
+│   ├── users.module.ts
+│   └── users.service.ts
+│
+├── stores/
+│   ├── stores.module.ts
+│   └── stores.service.ts
+│
+├── ecommerce-sync/
+│   ├── ecommerce-sync.module.ts
+│   └── ecommerce-sync.service.ts
+│
+├── shared/
+│   └── fee.utils.ts              # Cálculo del fee variable (2.5%-5%)
+│
+├── app.module.ts                 # AppModule: imports [ConfigModule, PrismaModule,
+│                                 #   QueueModule, MockModule, AdminModule]
+└── main.ts                       # Bootstrap: ValidationPipe global, CORS, prefix 'api', puerto 3000
 
-apps/api/test/
-├── unit/                         # Tests unitarios
-├── integration/                  # Tests de integración
-└── e2e/                          # Tests end-to-end
+# apps/worker/src/ — Node.js PURO (sin NestJS)
+├── processors/
+│   └── conversation.processor.ts # Máquina de estados — 9 fases del journey
+├── services/
+│   └── address.service.ts        # Google Maps + extractAddressFromConversation +
+│                                 # interpretUserIntent + buildPendingAddress
+├── dynamodb/
+│   └── dynamodb.service.ts       # saveMessage, getMessages, saveConversationState,
+│                                 # getConversationState
+├── redis-publisher.ts            # publishConversationUpdate(), publishConversationComplete()
+└── main.ts                       # 2 Workers BullMQ (process-conversation, process-response)
+                                  # concurrency: 2 cada uno
 
-jest.config.js                    # Configuración de Jest
-tsconfig.json                     # Configuración de TypeScript
-package.json                      # Dependencias y scripts (monorepo root)
-pnpm-workspace.yaml               # Configuración de workspaces
-turbo.json                        # Configuración de Turborepo
+# packages/prisma-db/
+├── schema.prisma                 # Fuente única: 17 modelos, 14 enums
+├── seed.ts                       # Datos mock iniciales
+├── migrations/
+│   ├── migration_lock.toml
+│   ├── 20260218000000_init/
+│   │   └── migration.sql
+│   ├── 20260219192221_revision_incial/
+│   │   └── migration.sql
+│   └── 20260221000000_init/
+│       └── migration.sql
+└── generated/                    # PrismaClient generado (index.js, index.d.ts, runtime/)
 ```
-
-**Nota**: Ver [ADR-001](../../memory-bank/architecture/001-monolith-modular.md) para decisión de arquitectura modular.
 
 ## Principios de Diseño Dirigido por el Dominio (DDD)
 
@@ -1238,42 +1276,34 @@ requiredEnvVars.forEach(varName => {
 
 - **Providers NestJS**: Usar decorador `@Injectable()` para servicios
 - **Módulos NestJS**: Declarar providers, imports, exports en decorador `@Module()`
-- **Inyectar Clientes DB**: 
-  - Supabase: Inyectar `SupabaseService` vía constructor
-  - DynamoDB: Inyectar `DynamoDBService` vía constructor
+- **Inyectar PrismaService**: Importar `PrismaModule` en el módulo y recibir `PrismaService` en el constructor
+- **PrismaService** está en `apps/api/src/prisma/prisma.service.ts` y extiende `PrismaClient` de `@adresles/prisma-db`
 - **Evitar Estado Global**: Evitar singletons globales para conexiones DB
 - **Testabilidad**: Usar DI de NestJS para facilitar mocking en tests
 
 ```typescript
-// Ejemplo: Service con DI
+// Ejemplo: Service con DI — patrón real del proyecto
 @Injectable()
-export class ConversationService {
-  constructor(
-    private readonly supabaseService: SupabaseService,
-    private readonly dynamoDBService: DynamoDBService,
-    private readonly openaiService: OpenAIService,
-  ) {}
+export class OrdersService {
+  constructor(private readonly prisma: PrismaService) {}
   
-  async createConversation(dto: CreateConversationDto) {
-    // Lógica usando servicios inyectados
+  async findAll(query: OrdersQuery) {
+    return this.prisma.order.findMany({
+      where: { /* filtros */ },
+      orderBy: { [query.sortBy]: query.sortDir },
+    });
   }
 }
 ```
 
 ```typescript
-// Middleware para inyectar cliente Prisma
-app.use((req: Request, res: Response, next: NextFunction) => {
-    req.prisma = prisma;
-    next();
-});
-
-// Usar en controladores
-export async function getCandidate(req: Request, res: Response) {
-    const candidate = await req.prisma.candidate.findUnique({
-        where: { id: req.params.id }
-    });
-    res.json(candidate);
-}
+// Ejemplo: MockModule con imports transitivos
+@Module({
+  imports: [StoresModule, UsersModule, OrdersModule, ConversationsModule, EcommerceSyncModule],
+  controllers: [MockOrdersController, MockConversationsController],
+  providers: [MockOrdersService, MockConversationsService, MockSseService],
+})
+export class MockModule {}
 ```
 
 ## Flujo de Trabajo de Desarrollo
@@ -1288,18 +1318,24 @@ export async function getCandidate(req: Request, res: Response) {
 ### Scripts de Desarrollo
 
 ```bash
+# Desde la raíz del monorepo:
+pnpm dev              # Arranca todas las apps (turbo dev)
+pnpm test             # Ejecutar pruebas de todo el monorepo
+
 # Desde apps/api o apps/worker:
 pnpm dev              # Servidor de desarrollo con recarga en caliente
 pnpm build            # Compilar para producción
-pnpm test             # Ejecutar pruebas
+pnpm test             # Ejecutar pruebas Jest
 pnpm test:cov         # Ejecutar pruebas con cobertura
-pnpm prisma:generate  # Generar cliente Prisma
 
-# Desde apps/api:
-npx prisma migrate dev --name nombre_descriptivo  # Crear y aplicar nueva migración
-npx prisma migrate deploy                         # Aplicar migraciones en producción
-npx prisma db seed                                # Poblar base de datos con datos mock
+# Prisma — SIEMPRE desde packages/prisma-db/ (no desde apps/api):
+pnpm prisma generate                              # Generar cliente Prisma en generated/
+pnpm prisma migrate dev --name nombre_desc        # Crear y aplicar nueva migración
+pnpm prisma migrate deploy                        # Aplicar migraciones en producción
+node -r dotenv/config -r ts-node/register seed.ts # Ejecutar seed con vars de entorno
 ```
+
+> **Importante**: El schema Prisma reside en `packages/prisma-db/schema.prisma`. Todas las operaciones Prisma CLI deben ejecutarse desde `packages/prisma-db/`. La API apunta al schema vía `apps/api/prisma.config.ts`.
 
 ### Calidad de Código
 
@@ -1330,10 +1366,12 @@ npx prisma db seed                                # Poblar base de datos con dat
 
 ### Framework de Deployment
 
-- **Docker**: Containerización de aplicaciones
-- **Docker Compose**: Orquestación multi-servicio
-- **Traefik**: Reverse proxy con SSL automático
+- **Docker**: Containerización de aplicaciones (imagen base `node:20-alpine`, multi-stage build)
+- **Docker Compose**: Orquestación multi-servicio (API + Worker + Redis)
+- **Traefik**: Reverse proxy con SSL automático (Let's Encrypt)
 - **GitHub Actions**: CI/CD automatizado
+
+> **Nota**: El proyecto NO usa Serverless Framework ni AWS Lambda. El deployment es en servidor dedicado con Docker Compose.
 
 ```yaml
 # docker-compose.yml (simplificado)
@@ -1360,4 +1398,7 @@ Ver detalles completos: [Adresles_Business.md - Sección 4.6-4.7](../../Adresles
 
 ---
 
-Este documento sirve como la base para mantener calidad y consistencia de código en toda la aplicación backend de Adresles. Todos los miembros del equipo deben seguir estas prácticas para asegurar una base de código mantenible, escalable y testeable.
+---
+
+**Última actualización**: 2026-03-07  
+**Stack**: NestJS 10, Node.js puro (Worker), Prisma 5.22.0, PostgreSQL 15, DynamoDB, Redis 7, OpenAI `gpt-4o-mini`, pnpm 9 + Turborepo 2.3

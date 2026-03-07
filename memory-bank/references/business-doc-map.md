@@ -174,7 +174,7 @@ Este mapa te ayuda a encontrar rápidamente información específica en el docum
 
 ### Para implementar un endpoint:
 1. Revisa **API Endpoints** ([4.12](../../Adresles_Business.md#412-api-endpoints-principales))
-2. Consulta **Backend Standards** ([openspec/specs/backend-standards.mdc](../../openspec/specs/backend-standards.mdc))
+2. Consulta **Backend Standards** ([.cursor/rules/backend-standards.mdc](../../.cursor/rules/backend-standards.mdc))
 
 ---
 

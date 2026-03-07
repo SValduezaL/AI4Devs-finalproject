@@ -54,7 +54,7 @@ Pasos detallados, típicamente:
     2. Obtén últimos cambios: `git pull origin [base-branch]`
     3. Crea nueva rama: `git checkout -b [branch-name]`
     4. Verifica creación de rama: `git branch`
-- **Notas**: Este debe ser el PRIMER paso antes de cualquier cambio de código. Consulta la sección "Development Workflow" de `openspecs/specs/frontend-standards.mdc` para convenciones específicas de nomenclatura de ramas y reglas de flujo de trabajo.
+- **Notas**: Este debe ser el PRIMER paso antes de cualquier cambio de código. Consulta la sección "Development Workflow" de `.cursor/rules/frontend-standards.mdc` para convenciones específicas de nomenclatura de ramas y reglas de flujo de trabajo.
 
 #### **Paso N: [Nombre de Acción]**
 
@@ -79,12 +79,12 @@ Pasos comunes:
     1. **Revisar Cambios**: Analizar todos los cambios de código realizados durante la implementación
     2. **Identificar Archivos de Documentación**: Determinar qué archivos de documentación necesitan actualizaciones basándose en:
         - Cambios en endpoint de API → Actualizar `openspecs/specs/api-spec.yml`
-        - Patrones UI/UX o patrones de componentes → Actualizar `openspecs/specs/frontend-standards.mdc`
+        - Patrones UI/UX o patrones de componentes → Actualizar `.cursor/rules/frontend-standards.mdc`
         - Cambios en enrutamiento → Actualizar documentación de enrutamiento
-        - Nuevas dependencias o cambios de configuración → Actualizar `openspecs/specs/frontend-standards.mdc`
+        - Nuevas dependencias o cambios de configuración → Actualizar `.cursor/rules/frontend-standards.mdc`
         - Patrones de prueba o cambios en Playwright → Actualizar documentación de pruebas
     3. **Actualizar Documentación**: Para cada archivo afectado:
-        - Actualizar contenido en español (según `openspecs/specs/documentation-standards.mdc`)
+        - Actualizar contenido en español (según `.cursor/rules/documentation-standards.mdc`)
         - Mantener consistencia con estructura de documentación existente
         - Asegurar formato apropiado
     4. **Verificar Documentación**:
@@ -92,7 +92,7 @@ Pasos comunes:
         - Verificar que la documentación siga la estructura establecida
     5. **Reportar Actualizaciones**: Documentar qué archivos fueron actualizados y qué cambios se hicieron
 - **Referencias**:
-    - Seguir proceso descrito en `openspecs/specs/documentation-standards.mdc`
+    - Seguir proceso descrito en `.cursor/rules/documentation-standards.mdc`
     - Toda la documentación debe escribirse en español
 - **Notas**: Este paso es OBLIGATORIO antes de considerar la implementación completa. No omitas actualizaciones de documentación.
 

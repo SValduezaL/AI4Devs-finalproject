@@ -51,7 +51,7 @@ Pendiente de documentar:
   Documento completo de diseño del sistema (Fases 1-4)  
   **v1.3**: Casos de Uso actualizados para MVP Mock
 
-- **[Backend Standards](../openspec/specs/backend-standards.mdc)** (1230 líneas)  
+- **[Backend Standards](../.cursor/rules/backend-standards.mdc)** (1230 líneas)  
   Estándares técnicos, DDD, SOLID, testing
 
 - **[Data Model](../openspec/specs/data-model.md)**  
@@ -163,9 +163,9 @@ Este memory-bank permite a la IA:
 
 ### Para Estándares Técnicos
 
-- Backend: `openspec/specs/backend-standards.mdc`
-- Frontend: `openspec/specs/frontend-standards.mdc`
-- Base: `openspec/specs/base-standards.mdc`
+- Backend: `.cursor/rules/backend-standards.mdc`
+- Frontend: `.cursor/rules/frontend-standards.mdc`
+- Base: `.cursor/rules/base-standards.mdc`
 
 ---
 

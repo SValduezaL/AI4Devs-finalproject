@@ -1,17 +1,12 @@
 ---
-description: Estándares de desarrollo frontend, mejores prácticas y convenciones para Adresles, React (Chat App) + Next.js (Dashboard Admin), TypeScript, TanStack Query, Zustand, Socket.io, Tailwind CSS, Shadcn/ui, incluyendo patrones de componentes, gestión de estado, directrices de UI/UX y prácticas de pruebas
+description: Estándares de desarrollo frontend, mejores prácticas y convenciones para Adresles. Dashboard Admin Next.js 16 (App Router, React 19, TailwindCSS v4, Shadcn/ui). Incluye patrones de Server Components, gestión de estado, SSE, directrices de UI/UX y prácticas de pruebas.
 globs:
     [
-        "frontend/src/**/*.{js,jsx,ts,tsx}",
-        "apps/web-chat/src/**/*.{js,jsx,ts,tsx}",
         "apps/web-admin/src/**/*.{js,jsx,ts,tsx}",
-        "frontend/playwright/**/*.{ts,js}",
-        "apps/*/playwright/**/*.{ts,js}",
-        "frontend/tsconfig.json",
-        "apps/*/tsconfig.json",
-        "frontend/playwright.config.ts",
-        "frontend/package.json",
-        "apps/*/package.json",
+        "apps/web-admin/tsconfig.json",
+        "apps/web-admin/package.json",
+        "apps/web-admin/playwright/**/*.{ts,js}",
+        "apps/web-admin/playwright.config.ts",
     ]
 alwaysApply: true
 ---
@@ -63,22 +58,17 @@ alwaysApply: true
 
 Este documento describe las mejores prácticas, convenciones y estándares utilizados en las aplicaciones frontend de Adresles. Estas prácticas aseguran consistencia de código, mantenibilidad y experiencia de desarrollo óptima.
 
-## Aplicaciones Frontend de Adresles
+## Aplicación Frontend de Adresles
 
-El proyecto Adresles tiene **dos aplicaciones frontend independientes**:
+El MVP de Adresles tiene **una única aplicación frontend**:
 
-### 1. Chat App (React + Vite)
+> **Nota**: La Chat App (`apps/web-chat/` — React + Vite + Socket.io) fue planificada pero **no implementada** en el MVP. La funcionalidad de simulación de conversaciones se integró directamente en el Dashboard Admin (`apps/web-admin/src/app/simulate/`).
 
-- **Propósito**: Aplicación conversacional para usuarios finales
-- **Stack**: React 18, Vite, TypeScript, TanStack Query, Zustand, Socket.io
-- **Características**: SPA interactiva, tiempo real, PWA-ready
-- **Ubicación**: `apps/web-chat/`
+### Dashboard Admin (Next.js)
 
-### 2. Dashboard Admin (Next.js)
-
-- **Propósito**: Panel de administración para visualizar pedidos, usuarios y conversaciones del MVP
+- **Propósito**: Panel de administración para visualizar pedidos, usuarios, conversaciones y simular el flujo de checkout del MVP
 - **Stack**: Next.js 16, React 19, TypeScript, TailwindCSS 4 (CSS-first), Shadcn/ui (Radix UI), date-fns, lucide-react
-- **Características**: App Router, Server Components por defecto, `force-dynamic` en páginas de datos, `cache: 'no-store'` en fetch, accesibilidad WCAG 2.1 AA
+- **Características**: App Router, Server Components por defecto, `force-dynamic` en páginas de datos, `cache: 'no-store'` en fetch, accesibilidad WCAG 2.1 AA, SSE para tiempo real
 - **Ubicación**: `apps/web-admin/`
 - **Deployment**: Vercel (free tier)
 
@@ -88,35 +78,50 @@ Ver [ADR-001](../../memory-bank/architecture/001-monolith-modular.md) para decis
 
 ### Tecnologías Centrales
 
-- **React**: Librería UI (v18.x Chat App / v19.x Dashboard Admin)
-- **TypeScript**: Lenguaje principal (strict mode) - Ambas apps
-- **Vite**: Build tool para Chat App (v5.x)
-- **Next.js**: Framework para Dashboard Admin (v16.x, App Router)
+- **React 19.x**: Librería UI
+- **TypeScript**: Lenguaje principal (strict mode)
+- **Next.js 16.x**: Framework — App Router, Server Components, SSR
 
-### Data Fetching y Estado (Chat App)
+### Data Fetching y Estado
 
-- **TanStack Query (v5.x)**: Data fetching, cache, sincronización con servidor
-- **Zustand (v4.x)**: State management global ligero (usuario actual, preferencias)
-- **React Hooks**: useState, useEffect para estado local de componentes
+- **React Server Components**: Data fetching en servidor por defecto (sin `useEffect` para fetching)
+- **React Hooks**: useState, useEffect, useRouter, usePathname para estado e interactividad en Client Components
+- **`fetch` nativo**: Con `cache: 'no-store'` para garantizar datos frescos en el helper `apiFetch` de `lib/api.ts`
 
 ### Real-time y Comunicación
 
-- **Socket.io Client (v4.x)**: WebSocket connection para chat en tiempo real (Chat App)
-- **Axios**: Cliente HTTP para comunicación con API REST (ambas apps)
+- **SSE (Server-Sent Events)**: `EventSource` nativo para recibir actualizaciones de conversaciones en tiempo real desde la API NestJS (`createConversationEventSource()` en `lib/api.ts`)
+- **`fetch` nativo**: Cliente HTTP para llamadas a la API REST. **No se usa axios.** La función `apiFetch<T>()` en `lib/api.ts` centraliza todas las llamadas con `cache: 'no-store'` y lanza error si `!res.ok`.
 
 ### UI y Estilos
 
-- **TailwindCSS (v4.x)**: Utility-first CSS, configuración CSS-first con `@theme` en `globals.css` (Dashboard Admin)
-- **Shadcn/ui**: Componentes UI accesibles y customizables — Radix UI (Dashboard Admin)
-- **date-fns (v4.x)**: Formateo de fechas (Dashboard Admin)
-- **lucide-react**: Iconos (Dashboard Admin)
-- **React Router DOM (v6.x)**: Routing en Chat App
+- **TailwindCSS (v4.x)**: Utility-first CSS, configuración **CSS-first** con `@theme {}` en `globals.css`. **Sin** `tailwind.config.ts`. `tailwindcss` está en `devDependencies` junto con `@tailwindcss/postcss`.
+- **Shadcn/ui**: Componentes UI accesibles — Radix UI. Generados en `src/components/ui/`. Configurados vía `components.json`.
+- **sonner**: Librería de toast notifications (`<Toaster richColors position="top-right" />` en `layout.tsx`).
+- **date-fns (v4.x)**: Formateo de fechas
+- **lucide-react**: Iconos
+- **cmdk (^1.1.1)**: Command palette/combobox (usado en `user-combobox.tsx`)
+- **class-variance-authority + clsx + tailwind-merge**: Utilidades de composición de clases CSS
+
+### Variables de Entorno
+
+- **`NEXT_PUBLIC_API_URL`**: URL base de la API NestJS. Por defecto `http://localhost:3000`. Configurada en `.env.local`.
+
+### Tokens de Marca (`globals.css` → `@theme {}`)
+
+Los colores de marca están definidos en el bloque `@theme {}` de `globals.css`:
+```css
+--color-brand-black: #000000
+--color-brand-lime:  #DBFF36
+--color-brand-teal:  #00687D
+--color-brand-white: #FFFFFF
+```
+Usar siempre estas clases (`bg-brand-lime`, `text-brand-black`, etc.) para elementos de marca.
 
 ### Framework de Pruebas
 
-- **Playwriht 1.58.0**: Pruebas end-to-end
-- **Jest**: Pruebas unitarias (vía Create React App)
-- **React Testing Library**: Utilidades de prueba de componentes
+- **Playwright 1.58.0**: Pruebas end-to-end
+- **Jest + React Testing Library**: Pruebas unitarias de componentes
 
 ### Herramientas de Desarrollo
 
@@ -126,66 +131,86 @@ Ver [ADR-001](../../memory-bank/architecture/001-monolith-modular.md) para decis
 
 ## Estructura del Proyecto
 
-### Chat App (apps/web-chat/)
-
-```
-apps/web-chat/
-├── src/
-│   ├── components/          # Componentes UI reutilizables
-│   │   ├── ui/             # Componentes base (Button, Input, Card)
-│   │   └── chat/           # Componentes específicos de chat
-│   ├── services/           # API services (axios)
-│   ├── hooks/              # Custom hooks
-│   ├── stores/             # Zustand stores (user, preferences)
-│   ├── lib/                # Utilidades y helpers
-│   ├── types/              # TypeScript types/interfaces
-│   ├── App.tsx             # Componente raíz con Router
-│   ├── main.tsx            # Entry point (Vite)
-│   └── index.css           # Estilos globales
-├── public/                 # Assets estáticos
-├── index.html              # HTML entry (Vite)
-├── vite.config.ts          # Configuración Vite
-├── tsconfig.json           # TypeScript config
-└── package.json            # Dependencies
-```
-
 ### Dashboard Admin (apps/web-admin/)
 
 ```
 apps/web-admin/
 ├── src/
-│   ├── app/                         # Next.js App Router
-│   │   ├── orders/                  # Página de pedidos
-│   │   │   ├── page.tsx             # Server Component (force-dynamic)
-│   │   │   ├── loading.tsx          # Skeleton
-│   │   │   └── error.tsx            # Error boundary
-│   │   ├── users/                   # Página de usuarios
+│   ├── app/                             # Next.js App Router
+│   │   ├── orders/                      # Página de pedidos
+│   │   │   ├── page.tsx                 # Server Component (force-dynamic)
+│   │   │   ├── loading.tsx              # Skeleton
+│   │   │   └── error.tsx               # Error boundary
+│   │   ├── users/                       # Página de usuarios
 │   │   │   ├── page.tsx
 │   │   │   ├── loading.tsx
 │   │   │   └── error.tsx
-│   │   ├── conversations/[id]/      # Visor de chat
+│   │   ├── conversations/[conversationId]/  # Visor de mensajes de conversación
 │   │   │   ├── page.tsx
 │   │   │   ├── loading.tsx
 │   │   │   └── error.tsx
-│   │   ├── globals.css              # Tailwind v4 @theme + tokens Shadcn
-│   │   ├── layout.tsx               # Root layout (Inter, Sidebar, Providers)
-│   │   └── page.tsx                 # Redirect a /orders
+│   │   ├── simulate/                    # Simulación de flujo de checkout (SSE + chat)
+│   │   │   ├── page.tsx                 # Server Component: carga stores + users
+│   │   │   ├── loading.tsx
+│   │   │   └── error.tsx
+│   │   ├── globals.css                  # Tailwind v4 @theme + tokens de marca + tokens Shadcn
+│   │   ├── layout.tsx                   # Root layout (Inter, Sidebar, Providers, Toaster)
+│   │   └── page.tsx                     # Redirect a /orders
 │   ├── components/
-│   │   ├── ui/                      # Shadcn/ui generados (table, badge, tooltip…)
-│   │   ├── layout/                  # sidebar.tsx, providers.tsx
-│   │   ├── orders/                  # Tabla, badges, empty state
-│   │   ├── users/                   # Tabla, badges, relative-date-cell, empty state
-│   │   └── chat/                    # chat-view.tsx, chat-bubble.tsx, chat-expiry-banner.tsx
+│   │   ├── ui/                          # Shadcn/ui generados (badge, button, dialog,
+│   │   │                                # input, label, popover, scroll-area, select,
+│   │   │                                # skeleton, switch, table, tooltip)
+│   │   ├── layout/
+│   │   │   ├── sidebar.tsx              # Sidebar de navegación (Client Component)
+│   │   │   └── providers.tsx            # TooltipProvider global
+│   │   ├── orders/
+│   │   │   ├── orders-table.tsx         # Tabla de pedidos (Client Component)
+│   │   │   ├── sortable-column-header.tsx  # Columna ordenable reutilizable
+│   │   │   ├── order-status-badge.tsx
+│   │   │   ├── orders-empty-state.tsx
+│   │   │   ├── orders-filter-bar.tsx    # Barra de filtros completa
+│   │   │   ├── orders-search-input.tsx
+│   │   │   ├── orders-status-filter.tsx
+│   │   │   ├── orders-mode-filter.tsx
+│   │   │   ├── orders-date-filter.tsx
+│   │   │   └── orders-active-filter-chips.tsx
+│   │   ├── users/
+│   │   │   ├── users-table.tsx
+│   │   │   ├── users-sortable-column-header.tsx
+│   │   │   ├── users-table-skeleton.tsx
+│   │   │   ├── user-registered-badge.tsx
+│   │   │   ├── users-empty-state.tsx
+│   │   │   ├── users-filter-bar.tsx
+│   │   │   ├── users-search-input.tsx
+│   │   │   ├── users-registered-filter.tsx
+│   │   │   └── users-active-filter-chips.tsx
+│   │   ├── chat/
+│   │   │   ├── chat-view.tsx            # Visor de mensajes de conversación
+│   │   │   ├── chat-bubble.tsx
+│   │   │   ├── chat-expiry-banner.tsx
+│   │   │   └── conversation-badges.tsx
+│   │   └── simulate/
+│   │       ├── simulation-page.tsx      # Orquestador principal ('use client')
+│   │       ├── simulation-chat.tsx      # Chat con SSE en tiempo real
+│   │       ├── order-config-modal.tsx   # Modal de configuración del pedido mock
+│   │       ├── order-summary-bar.tsx    # Barra de resumen del pedido activo
+│   │       ├── simulation-empty-state.tsx
+│   │       ├── typing-indicator.tsx     # Animación de escritura IA
+│   │       └── user-combobox.tsx        # Combobox de selección de usuario (cmdk)
 │   ├── lib/
-│   │   ├── api.ts                   # fetch con cache: 'no-store'
-│   │   └── utils.ts                 # cn(), formatDate, formatCurrency, isExpiringSoon…
+│   │   ├── api.ts                       # fetch nativo con cache:'no-store', NEXT_PUBLIC_API_URL
+│   │   ├── simulate-data.ts             # Datos por defecto para el formulario de simulación
+│   │   └── utils.ts                     # cn(), formatDate, formatCurrency, isExpiringSoon…
 │   └── types/
-│       └── api.ts                   # Interfaces TypeScript de respuestas API
-├── public/                          # Assets estáticos
-├── components.json                  # Configuración Shadcn (Tailwind v4)
-├── next.config.ts                   # Next.js config
-├── tsconfig.json                    # TypeScript config
-└── package.json                     # Dependencies
+│       └── api.ts                       # Tipos TypeScript: AdminOrder, AdminUser, etc.
+│                                        # + constantes: VALID_SORT_COLUMNS, DEFAULT_SORT…
+├── public/                              # Assets estáticos
+├── components.json                      # Configuración Shadcn (Tailwind v4)
+├── next.config.ts                       # Next.js config
+├── postcss.config.mjs                   # PostCSS con @tailwindcss/postcss v4
+├── eslint.config.mjs                    # ESLint v9 flat config
+├── tsconfig.json                        # TypeScript config
+└── package.json                         # name: @adresles/web-admin, dev port: 3001
 ```
 
 **Patrones clave del Dashboard Admin**:
@@ -227,6 +252,21 @@ apps/web-admin/
     ? (dir === 'asc' || dir === 'desc' ? dir : DEFAULT_DIR)
     : DEFAULT_DIR;  // reset conjunto cuando sortBy es inválido
   ```
+
+- **Patrón de página Simulate (SSE + estado cliente)**:
+  - `simulate/page.tsx` es un **Server Component** que precarga `stores` y `users` con `Promise.all`, luego los pasa como props a `<SimulationPage>`.
+  - `SimulationPage` (`'use client'`) es el orquestador: gestiona `activeConversation` y `modalOpen`.
+  - `SimulationChat` abre un `EventSource` para recibir mensajes SSE del Worker en tiempo real.
+  - El flujo completo: Server precarga datos → Client abre modal → POST `/api/mock/orders` → recibe `{order_id, conversation_id}` → abre EventSource sobre `conversationId` → recibe mensajes en tiempo real.
+
+  ```typescript
+  // lib/api.ts — función SSE
+  export function createConversationEventSource(conversationId: string): EventSource {
+    return new EventSource(`${API_URL}/api/mock/conversations/${conversationId}/events`);
+  }
+  ```
+
+- **Toasts con Sonner**: Para notificaciones (éxito, error) usar `toast.success()` / `toast.error()` de `sonner`. El `<Toaster>` ya está configurado globalmente en `layout.tsx` con `richColors` y `position="top-right"`.
 
 ## Estándares de Codificación
 
@@ -406,22 +446,19 @@ const handleInputChange = (e) => {
 
 - **Siempre manejar estados de carga** para operaciones asíncronas
 - **Implementar manejo de errores** con mensajes amigables para el usuario
-- **Usar componentes Alert de React Bootstrap** para retroalimentación
+- Usar **`loading.tsx`** (Next.js Suspense boundary) para skeletons automáticos
+- Usar **`error.tsx`** (Next.js Error boundary) para errores de Server Component
+- Para errores en Client Components usar `toast.error()` de **sonner**
 
-```javascript
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState("");
-const [success, setSuccess] = useState("");
+```typescript
+// Patrón en Client Component con Sonner
+import { toast } from 'sonner';
 
-// En función asíncrona
 try {
-    setLoading(true);
-    const data = await apiCall();
-    setSuccess("Operation completed successfully");
+    const result = await startSimulation(payload);
+    toast.success('Simulación iniciada correctamente');
 } catch (error) {
-    setError("Error message: " + error.message);
-} finally {
-    setLoading(false);
+    toast.error('Error al iniciar la simulación');
 }
 ```
 
@@ -429,102 +466,81 @@ try {
 
 #### Servicios de API
 
-- **Centralizar llamadas de API** en archivos de servicio
-- Usar **axios** para peticiones HTTP
-- **Exportar objetos de servicio** con métodos agrupados
-- **Manejar errores a nivel de servicio** cuando sea apropiado
+- **Centralizar llamadas de API** en `src/lib/api.ts`
+- Usar **`fetch` nativo** (no axios). La función `apiFetch<T>()` centraliza el fetch con `cache: 'no-store'` y manejo de errores
+- **Exportar funciones tipadas** que llaman a `apiFetch<T>()`
+- La URL base viene de `process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'`
 
-```javascript
-import axios from "axios";
+```typescript
+// lib/api.ts — patrón real del proyecto
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
-const API_BASE_URL = "http://localhost:3010";
+async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, { cache: 'no-store', ...init });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+  return res.json() as Promise<T>;
+}
 
-export const positionService = {
-    getAllPositions: async () => {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/positions`);
-            return response.data;
-        } catch (error) {
-            console.error("Error fetching positions:", error);
-            throw error;
-        }
-    },
+export const getOrders = (page = 1, limit = 50, ...): Promise<OrdersResponse> =>
+  apiFetch(`/api/admin/orders?${params}`);
 
-    updatePosition: async (id, positionData) => {
-        try {
-            const response = await axios.put(
-                `${API_BASE_URL}/positions/${id}`,
-                positionData,
-            );
-            return response.data;
-        } catch (error) {
-            console.error("Error updating position:", error);
-            throw error;
-        }
-    },
-};
+export async function startSimulation(payload: CreateMockOrderPayload): Promise<StartSimulationResult> {
+  return apiFetch('/api/mock/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
 ```
 
 ## Estándares de UI/UX
 
-### Integración con Bootstrap
+### Sistema de Diseño: TailwindCSS v4 + Shadcn/ui
 
-- Usar **componentes React Bootstrap** en lugar de Bootstrap plano
-- **Importar CSS de Bootstrap** en el componente App principal
-- Seguir **sistema de grid responsivo de Bootstrap** (Container, Row, Col)
-
-```javascript
-import {
-    Container,
-    Row,
-    Col,
-    Card,
-    Button,
-    Form,
-    Alert,
-} from "react-bootstrap";
-```
+- **TailwindCSS v4 CSS-first**: No hay `tailwind.config.ts`. Los tokens de diseño (colores, tipografía, espaciado) se definen en el bloque `@theme {}` dentro de `globals.css`.
+- **Shadcn/ui (Radix UI)**: Sistema de componentes accesibles. Los componentes se generan en `src/components/ui/` y se personalizan localmente. Configurados vía `components.json`.
+- **Sin Bootstrap**: El proyecto no usa React Bootstrap. Bootstrap fue eliminado en favor de TailwindCSS v4 + Shadcn/ui.
 
 ### Manejo de Formularios
 
-- Usar **componentes controlados** para entradas de formulario
+- Usar **componentes controlados** (`useState`) para entradas de formulario
 - Implementar **validación en tiempo real** donde sea apropiado
-- **Deshabilitar botones de envío** durante el envío del formulario
+- **Deshabilitar botones de envío** durante el envío del formulario (`canSubmit` derivado del estado)
 - **Limpiar estado del formulario** después del envío exitoso
+- Mapeo de campos de dirección: usar los nombres exactos del API (`line1`/`line2` → `street`/`full_address`)
 
-```javascript
-<Form onSubmit={handleSubmit}>
-    <Form.Group className="mb-3">
-        <Form.Label>Title *</Form.Label>
-        <Form.Control
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleInputChange}
-            required
-        />
-    </Form.Group>
-    <Button type="submit" disabled={saving}>
-        {saving ? "Saving..." : "Save"}
-    </Button>
-</Form>
+```typescript
+// Patrón: canSubmit derivado del estado, sin lógica de validación en el submit
+const canSubmit = formData.title.trim().length > 0 && !isSaving;
+
+return (
+  <form onSubmit={handleSubmit}>
+    <input
+      value={formData.title}
+      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+    />
+    <button type="submit" disabled={!canSubmit}>
+      {isSaving ? 'Guardando...' : 'Guardar'}
+    </button>
+  </form>
+);
 ```
 
 ### Patrones de Navegación
 
-- Usar **React Router** para toda la navegación
-- **Implementar breadcrumbs** con navegación hacia atrás
-- Usar **navegación programática** con hook useNavigate
+- Usar **Next.js App Router** para toda la navegación (`useRouter`, `usePathname` de `next/navigation`)
+- **Link de Next.js** (`<Link href="...">`) para navegación declarativa entre páginas
+- **Navegación programática** con `useRouter().push()` en Client Components
 
-```javascript
-import { useNavigate } from "react-router-dom";
+```typescript
+'use client';
+import { useRouter, usePathname } from 'next/navigation';
 
-const navigate = useNavigate();
+const router = useRouter();
+const pathname = usePathname();
 
-// Ejemplos de navegación
-<Button variant="link" onClick={() => navigate("/")}>
-    ← Back to Dashboard
-</Button>;
+// Navegación con query params
+router.push(`${pathname}?sort=createdAt&dir=desc`);
 ```
 
 ### Accesibilidad
@@ -664,12 +680,14 @@ export default defineConfig({
 ### Scripts de Desarrollo
 
 ```bash
-npm start          # Servidor de desarrollo
-npm test           # Ejecutar pruebas unitarias
-npm run build      # Compilación de producción
-npm run playwright:open    # Abrir ejecutor de pruebas Playwright
-npm run playwright:run     # Ejecutar pruebas Playwright sin interfaz
+pnpm dev           # Servidor de desarrollo Next.js en puerto 3001
+pnpm build         # Compilación de producción
+pnpm lint          # ESLint con eslint.config.mjs
 ```
+
+> **Puerto**: El servidor de desarrollo de `web-admin` corre en el **puerto 3001** (`next dev --port 3001`), no en el 3000, que está reservado para la API NestJS.
+>
+> **Gestor de paquetes**: El monorepo usa **pnpm** (v9.x). Usar siempre `pnpm` en lugar de `npm` o `yarn`.
 
 ### Calidad de Código
 
@@ -678,20 +696,8 @@ npm run playwright:run     # Ejecutar pruebas Playwright sin interfaz
 - **Todas las pruebas pasando** antes del despliegue
 - **Monitoreo de rendimiento** con Web Vitals
 
-## Estrategia de Migración
+---
 
-### Migración a TypeScript
-
-- **Migración gradual** de JavaScript a TypeScript
-- **Componentes nuevos en TypeScript** por defecto
-- **Mantener componentes JavaScript** existentes hasta refactor planificado
-- **Agregar tipos incrementalmente** al código existente
-
-### Modernización de Componentes
-
-- **Componentes funcionales** sobre componentes de clase
-- **Hooks** en lugar de métodos de ciclo de vida
-- **Componentes React Bootstrap** para consistencia
-- **Principios de diseño responsivo** en todo el proyecto
-
-Este documento sirve como la base para mantener calidad y consistencia de código en toda la aplicación frontend del Proyecto Final del Máster AI4Devs. Todos los miembros del equipo deben seguir estas prácticas para asegurar una base de código mantenible y escalable.
+**Última actualización**: 2026-03-07  
+**Stack**: Next.js 16, React 19, TailwindCSS v4, Shadcn/ui, Playwright 1.58.0  
+**Deployment**: Vercel (free tier)

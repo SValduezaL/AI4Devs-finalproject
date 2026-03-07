@@ -59,11 +59,15 @@ alwaysApply: true
     - ❌ No usar español en nombres de código.
     - ❌ No usar inglés para explicar lógica o negocio.
 
-## 3. Estándares específicos
+## 3. Operaciones de Sistema de Archivos (Windows)
+
+- **Verificar contenidos de directorios**: Usar siempre `cmd /c dir /s /b <ruta>` para listar archivos de forma fiable. PowerShell `Get-ChildItem` puede devolver resultados vacíos incorrectamente en algunas rutas del proyecto en Windows.
+- **Antes de afirmar que una carpeta está vacía**: Confirmar con `cmd /c dir /b <ruta>` antes de declarar ausencia de archivos o subdirectorios.
+
+## 4. Estándares específicos
 
 Para estándares y directrices detalladas específicas a diferentes áreas del proyecto, consultar:
 
 - [Estándares de Backend](./backend-standards.mdc) - Desarrollo de API, patrones de base de datos, pruebas, seguridad y mejores prácticas de backend
 - [Estándares de Frontend](./frontend-standards.mdc) - Componentes React, directrices de UI/UX y arquitectura frontend
 - [Estándares de Documentación](./documentation-standards.mdc) - Estructura de documentación técnica, formato y directrices de mantenimiento, incluyendo estándares de IA como este documento
-

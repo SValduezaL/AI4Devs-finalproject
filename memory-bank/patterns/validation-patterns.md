@@ -2,7 +2,7 @@
 
 > **Última actualización**: 2026-02-24  
 > **Origen**: Bug en `AdminController` — Query DTO sin decoradores → HTTP 400  
-> **Estándar relacionado**: [`openspec/specs/backend-standards.mdc` — Patrones de Validación](../../openspec/specs/backend-standards.mdc)
+> **Estándar relacionado**: [`/.cursor/rules/backend-standards.mdc` — Patrones de Validación](../../.cursor/rules/backend-standards.mdc)
 
 ---
 

@@ -1,9 +1,9 @@
 # ADR 004: OpenAI GPT-4 como Motor Conversacional
 
-**Estado**: ✅ Aceptada  
+**Estado**: ✅ Aceptada (modelo ajustado en implementación)  
 **Fecha**: 2026-01-30  
 **Decidido en**: Fase 1 - Investigación y Análisis (requisito del cliente)  
-**Implementado en**: Pendiente (diseño completado)  
+**Implementado en**: ✅ apps/worker/src/processors/conversation.processor.ts  
 **Reemplaza a**: N/A
 
 ---
@@ -40,13 +40,15 @@ El núcleo funcional de Adresles es un agente conversacional que:
 
 ## Decisión
 
-**Usar OpenAI GPT-4** como motor de lenguaje para el agente conversacional.
+**Usar OpenAI** como motor de lenguaje para el agente conversacional.
 
-Configuración:
-- Modelo: `gpt-4` (no fine-tuned inicialmente)
+Configuración implementada:
+- Modelo: `gpt-4o-mini` (ajuste de coste/velocidad respecto al plan original de `gpt-4`)
 - Temperature: `0.7` (balance creatividad/consistencia)
 - Max tokens: `500` (respuestas concisas)
 - System prompts estructurados por tipo de conversación
+
+> **Nota de implementación (2026-03-07)**: El modelo real en producción es `gpt-4o-mini`, no `gpt-4`. El cambio fue motivado por optimización de coste y latencia para el MVP. El requisito original del cliente era GPT-4, pero `gpt-4o-mini` ofrece calidad comparable a un coste significativamente menor para el caso de uso conversacional de Adresles. Esta decisión puede revisarse cuando el volumen justifique el coste adicional de `gpt-4`.
 
 ---
 
@@ -187,7 +189,7 @@ export class OpenAIService implements ILLMService {
 
   async generateResponse(params: GenerateResponseParams): Promise<string> {
     const response = await this.client.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens ?? 500,
       messages: [
@@ -202,7 +204,7 @@ export class OpenAIService implements ILLMService {
 
   async *streamResponse(params: GenerateResponseParams): AsyncIterable<string> {
     const stream = await this.client.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o-mini',
       temperature: params.temperature ?? 0.7,
       max_tokens: params.maxTokens ?? 500,
       messages: [
@@ -354,14 +356,21 @@ Con 1000 conversaciones/día:
 - Confirmado que coste por conversación (~$0.024) es aceptable para pricing (fee 2.5-5%)
 - Worker separado para no bloquear API con llamadas a OpenAI
 
+### 2026-03-07: Ajuste de modelo en implementación
+
+- Modelo ajustado de `gpt-4` a `gpt-4o-mini` por optimización de coste/latencia en el MVP
+- El Worker (`apps/worker/`) implementa el procesador de conversaciones con `gpt-4o-mini` directamente, sin la capa de abstracción `ILLMService` documentada en el ADR (deuda técnica pendiente)
+- El change `cu03-b4-worker-address-book` completó la implementación del procesador con 9 fases de estado
+
 ### Próximas Iteraciones
 
+- **Abstracción LLM**: Implementar interface `ILLMService` para desacoplar el proveedor
+- **Evaluación de modelo**: Comparar `gpt-4o-mini` vs `gpt-4o` cuando el volumen justifique el análisis
 - **Fine-tuning**: Considerar tras 1000 conversaciones reales (reducción 50% coste)
-- **GPT-3.5 fallback**: Implementar para conversaciones simples (tipo INFORMATION)
 - **Prompt optimization**: Iterar con A/B testing para reducir tokens
 
 ---
 
 **Creado por**: Sergio  
-**Última actualización**: 2026-02-07  
+**Última actualización**: 2026-03-07  
 **Próxima revisión**: Tras 1 mes en producción (validar coste real y calidad)

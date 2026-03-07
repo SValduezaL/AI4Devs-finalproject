@@ -673,7 +673,7 @@ El backend sigue principios de DDD con **Bounded Contexts** claros:
 - ✅ Onboarding rápido de nuevos desarrolladores
 
 > 📖 **Estructura completa**: [Adresles_Business.md - Sección 4.5](./Adresles_Business.md#45-estructura-del-proyecto)  
-> 📖 **Backend Standards**: [openspec/specs/backend-standards.mdc](./openspec/specs/backend-standards.mdc)  
+> 📖 **Backend Standards**: [/.cursor/rules/backend-standards.mdc](./.cursor/rules/backend-standards.mdc)  
 > 📖 **Changes archivados**: [openspec/changes/archive/](./openspec/changes/archive/) — CU-01, CU-02, T01-T03, CU03-A1-A6, CU03-B1-B4, infra-prisma-shared-schema
 
 ### **2.4. Infraestructura y despliegue**
@@ -906,7 +906,7 @@ pnpm --filter worker test
 
 **Cobertura objetivo**: 80% en lógica de negocio crítica (Conversations, Orders, Addresses)
 
-> 📖 **Backend Standards incluye testing**: [openspec/specs/backend-standards.mdc](./openspec/specs/backend-standards.mdc)
+> 📖 **Backend Standards incluye testing**: [/.cursor/rules/backend-standards.mdc](./.cursor/rules/backend-standards.mdc)
 
 ---
 

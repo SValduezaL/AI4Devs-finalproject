@@ -187,7 +187,7 @@ IA solicita dirección + invita a registrarse para futuras compras
 Para detalles completos, ver **[Tech Stack](./tech-stack.md)**
 
 - **Backend**: Node.js + NestJS + TypeScript
-- **Frontend**: React (Chat App) + Next.js (Dashboard Admin)
+- **Frontend**: React 19 + Next.js 16 (Dashboard Admin — única app frontend del MVP)
 - **Base de Datos**: Supabase (PostgreSQL) + DynamoDB
 - **IA**: OpenAI GPT-4
 - **Validación**: Google Maps API
@@ -217,7 +217,7 @@ El sistema se estructura en dominios siguiendo Domain-Driven Design:
 4. **Users** - Usuarios y autenticación
 5. **Stores** - Tiendas y configuración eCommerce
 
-**Detalle completo**: Ver [Backend Standards - DDD](../../openspec/specs/backend-standards.mdc)
+**Detalle completo**: Ver [Backend Standards - DDD](../../.cursor/rules/backend-standards.mdc)
 
 ---
 

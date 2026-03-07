@@ -366,7 +366,7 @@ No existe una vista "lista de todas las conversaciones". La conversación es un 
 
 ### Convenciones de Código
 - Código fuente en **inglés** (variables, funciones, clases)
-- Comentarios y docs en **español** (per `base-standards.mdc`)
+- Comentarios y docs en **español** (per `.cursor/rules/base-standards.mdc`)
 - `strict: true` en tsconfig
 - Sin `any` — usar tipos explícitos o `unknown`
 - `cn()` para todas las combinaciones de clases Tailwind condicionales

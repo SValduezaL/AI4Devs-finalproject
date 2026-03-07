@@ -422,7 +422,7 @@ SwaggerModule.setup('api/docs', app, document);
 
 - **Documento fuente**: [Adresles_Business.md - Sección 4.5](../../Adresles_Business.md#45-estructura-del-proyecto)
 - **Registro de Decisiones**: [Adresles_Business.md - Decisión 30/01/2026](../../Adresles_Business.md#registro-de-decisiones)
-- **Backend Standards**: [openspec/specs/backend-standards.mdc](../../openspec/specs/backend-standards.mdc)
+- **Backend Standards**: [.cursor/rules/backend-standards.mdc](../../.cursor/rules/backend-standards.mdc)
 - **NestJS Docs**: https://docs.nestjs.com/
 - **NestJS + DDD**: https://github.com/nestjs/nest/tree/master/sample/14-typeorm-ddd
 - **ADR relacionado**: [ADR-001: Monolito Modular](./001-monolith-modular.md)
@@ -437,8 +437,13 @@ SwaggerModule.setup('api/docs', app, document);
 - Experiencia previa con Angular (arquitectura similar) facilita adopción
 - Integración nativa con BullMQ crítica para Worker de conversaciones
 
+### 2026-03-07: Revisión post-implementación MVP
+
+- **Socket.io → SSE**: La `ConversationGateway` planificada (Socket.io + `@nestjs/websockets`) **no se implementó**. En su lugar, se usa **Server-Sent Events (SSE)** con Redis Pub/Sub para comunicación en tiempo real. El backend expone endpoints SSE en el módulo `Mock`, y el frontend usa `EventSource` nativo. Swagger se usa solo en desarrollo (no en producción).
+- **Arquitectura real de módulos**: Ver `ADR-001` actualizado para la estructura de módulos real: `Orders`, `Users`, `Conversations`, `Addresses`, `Mock`, `Admin`, `EcommerceSync`, `Queue`, `Prisma`.
+
 ---
 
 **Creado por**: Sergio  
-**Última actualización**: 2026-02-07  
+**Última actualización**: 2026-03-07  
 **Próxima revisión**: Tras 3 meses de desarrollo (validar productividad real)

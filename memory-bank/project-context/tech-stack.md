@@ -1,6 +1,6 @@
 # Tech Stack - Adresles
 
-> **Última actualización**: 2026-02-23  
+> **Última actualización**: 2026-03-07  
 > **Documento fuente**: [Adresles_Business.md - Fase 4](../../Adresles_Business.md#fase-4-diseño-de-alto-nivel)
 
 ---
@@ -25,28 +25,23 @@
 
 ### Frontend
 
-#### Chat App (Aplicación Usuario)
-
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| **React** | 18.x | Librería UI |
-| **Vite** | 5.x | Build tool & dev server |
-| **TypeScript** | 5.x | Type safety |
-| **TanStack Query** | 5.x | Data fetching & cache |
-| **Zustand** | 4.x | State management |
-| **Socket.io Client** | 4.x | Real-time messaging |
+> **Nota**: El MVP implementa una única aplicación frontend (`apps/web-admin/`). La Chat App (`apps/web-chat/`) fue descartada del MVP; la simulación de conversaciones se integró directamente en el Dashboard Admin.
 
 #### Dashboard Admin
 
 | Tecnología | Versión | Propósito |
 |------------|---------|-----------|
-| **Next.js** | 16.x | Framework React SSR (App Router, Server Components) |
-| **React** | 19.x | Librería UI |
+| **Next.js** | 16.1.6 | Framework React SSR (App Router, Server Components) — puerto dev: **3001** |
+| **React** | 19.2.3 | Librería UI |
 | **TypeScript** | 5.x | Type safety |
-| **TailwindCSS** | 4.x | Utility-first CSS (CSS-first con `@theme` en globals.css) |
+| **TailwindCSS** | 4.x | Utility-first CSS (CSS-first con `@theme` en globals.css, sin `tailwind.config.ts`) |
 | **Shadcn/ui** | Latest | Componentes UI accesibles (Radix UI) |
+| **sonner** | 2.x | Toast notifications (`toast.success()` / `toast.error()`) |
 | **date-fns** | 4.x | Formateo de fechas |
 | **lucide-react** | Latest | Iconos |
+| **cmdk** | 1.x | Combobox / command palette |
+| **fetch nativo** | — | HTTP client (NO axios). Centralizado en `lib/api.ts` vía `apiFetch<T>()` |
+| **EventSource nativo** | — | SSE para tiempo real (simulación de conversaciones) |
 
 ---
 
@@ -80,7 +75,7 @@
 
 | Servicio | Propósito | Decisión ADR |
 |----------|-----------|--------------|
-| **OpenAI API** | Motor conversacional GPT-4 | [ADR-004](../architecture/004-openai-gpt4.md) |
+| **OpenAI API** | Motor conversacional (`gpt-4o-mini`) | [ADR-004](../architecture/004-openai-gpt4.md) |
 | **Google Maps API** | Validación + normalización de direcciones | Incluido en diseño inicial |
 | **Supabase** | PostgreSQL managed + Auth | [ADR-002](../architecture/002-supabase-dynamodb.md) |
 | **AWS DynamoDB** | NoSQL managed para mensajes | [ADR-002](../architecture/002-supabase-dynamodb.md) |
@@ -103,7 +98,6 @@
 | Componente | Servicio | Propósito |
 |------------|----------|-----------|
 | **Dashboard Admin** | Vercel | Hosting Next.js (Free tier) |
-| **Chat App** | Nginx en servidor dedicado | SPA estático servido |
 
 **Detalle completo**: Ver [Adresles_Business.md - Sección 4.6](../../Adresles_Business.md#46-diagrama-de-infraestructura-y-deployment)
 
@@ -135,23 +129,24 @@
 ```
 adresles/
 ├── apps/
-│   ├── api/              # NestJS Backend
-│   ├── worker/           # BullMQ Worker
-│   ├── web-chat/         # React Chat App (Vite)
-│   └── web-admin/        # Next.js Dashboard
+│   ├── api/              # NestJS 10 — Backend modular (HTTP + SSE)
+│   ├── worker/           # Node.js puro — BullMQ Worker (sin NestJS)
+│   └── web-admin/        # Next.js 16 — Dashboard Admin (App Router)
 │
 ├── packages/
-│   ├── shared-types/     # Types compartidos
-│   └── api-client/       # Cliente API generado
+│   ├── prisma-db/        # Schema Prisma 5.22.0 + client generado + migrations + seed
+│   └── shared-types/     # Interfaces de colas (ProcessConversationJobData, etc.)
 │
 ├── infrastructure/
 │   ├── docker/
-│   │   └── docker-compose.yml
+│   │   └── docker-compose.yml  # Redis 7, DynamoDB-local, PostgreSQL 15
 │   └── scripts/
 │
 └── .github/
     └── workflows/
 ```
+
+> **Importante**: El Worker (`apps/worker/`) es un proceso **Node.js puro** sin NestJS. Instancia directamente `Worker` de BullMQ, `PrismaClient` desde `@adresles/prisma-db` y el cliente de OpenAI.
 
 **Detalle completo**: Ver [Adresles_Business.md - Sección 4.5](../../Adresles_Business.md#45-estructura-del-proyecto)
 
@@ -174,30 +169,20 @@ adresles/
 }
 ```
 
-### Frontend Chat (React + Vite)
-
-```json
-{
-  "react": "^18.0.0",
-  "vite": "^5.0.0",
-  "@tanstack/react-query": "^5.0.0",
-  "zustand": "^4.0.0",
-  "socket.io-client": "^4.0.0"
-}
-```
-
 ### Frontend Admin (Next.js)
 
 ```json
 {
-  "next": "^16.0.0",
-  "react": "^19.0.0",
-  "tailwindcss": "^4.0.0",
-  "@radix-ui/react-tooltip": "^1.0.0",
-  "date-fns": "^4.0.0",
-  "lucide-react": "latest",
-  "clsx": "^2.0.0",
-  "tailwind-merge": "^2.0.0"
+  "next": "16.1.6",
+  "react": "19.2.3",
+  "sonner": "^2.0.7",
+  "date-fns": "^4.1.0",
+  "lucide-react": "^0.575.0",
+  "cmdk": "^1.1.1",
+  "clsx": "^2.1.1",
+  "tailwind-merge": "^3.5.0",
+  "class-variance-authority": "^0.7.1",
+  "tailwindcss": "^4 (devDependency)"
 }
 ```
 
@@ -244,7 +229,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { render, screen } from '@testing-library/react';
 ```
 
-**Estándares completos**: Ver [Backend Standards - Testing](../../openspec/specs/backend-standards.mdc)
+**Estándares completos**: Ver [Backend Standards - Testing](../../.cursor/rules/backend-standards.mdc)
 
 ---
 
@@ -290,7 +275,7 @@ Stack considerado:
 ## 🔗 Referencias
 
 - **Documento completo**: [Adresles_Business.md - Fase 4](../../Adresles_Business.md#fase-4-diseño-de-alto-nivel)
-- **Backend Standards**: [openspec/specs/backend-standards.mdc](../../openspec/specs/backend-standards.mdc)
+- **Backend Standards**: [.cursor/rules/backend-standards.mdc](../../.cursor/rules/backend-standards.mdc)
 - **ADRs relacionados**:
   - [ADR-002: DB Híbrida](../architecture/002-supabase-dynamodb.md)
   - [ADR-003: NestJS Backend](../architecture/003-nestjs-backend.md)
@@ -298,6 +283,6 @@ Stack considerado:
 
 ---
 
-**Última actualización**: 2026-02-23  
+**Última actualización**: 2026-03-07 (revisión frontend completa)
 **Mantenido por**: Sergio  
-**Versiones actualizadas**: Prisma 5.22.0 (pinned), BullMQ 5.x, ESLint 9.x, @typescript-eslint 8.x, Next.js 16.x, React 19.x, Tailwind 4.x
+**Versiones actualizadas**: Prisma 5.22.0 (pinned), BullMQ 5.x, ESLint 9.x, @typescript-eslint 8.x, Next.js 16.1.6, React 19.2.3, Tailwind 4.x, sonner 2.x, cmdk 1.x

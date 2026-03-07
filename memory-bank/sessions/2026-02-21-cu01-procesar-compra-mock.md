@@ -47,7 +47,7 @@ Implementación completa del Caso de Uso 1 (CU-01): Procesar Compra desde eComme
 
 ### Documentación actualizada
 - `openspec/specs/development_guide.md` — Variables `.env` reales (`DATABASE_URL`, `REDIS_URL`, `DYNAMODB_ENDPOINT`), `.env` del Worker, instrucción de seed, sección de pruebas con inventario de `.spec.ts`
-- `openspec/specs/backend-standards.mdc` — Patrón `.spec.ts`, `pnpm` en lugar de `npm`, `supertest` y `@nestjs/testing` como deps de prueba
+- `.cursor/rules/backend-standards.mdc` — Patrón `.spec.ts`, `pnpm` en lugar de `npm`, `supertest` y `@nestjs/testing` como deps de prueba
 - `openspec/changes/cu01-procesar-compra-mock/spec.md` y `proposal.md` — Corregidos nombres de status: `ADDRESS_CONFIRMED` → `READY_TO_PROCESS`, `SYNCED` → `COMPLETED`
 
 ## Decisiones tomadas
@@ -75,7 +75,7 @@ apps/worker/src/dynamodb/dynamodb.service.ts
 apps/api/prisma/migrations/                 — 3 migraciones (init + revision_incial + baseline)
 apps/api/prisma/seed.ts
 openspec/specs/development_guide.md
-openspec/specs/backend-standards.mdc
+.cursor/rules/backend-standards.mdc
 ```
 
 ## Notas para próxima sesión

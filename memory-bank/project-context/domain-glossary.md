@@ -261,7 +261,7 @@ Proceso donde el usuario puede optar por registrarse en Adresles después de com
 - **Glosario completo**: [Adresles_Business.md - Sección 6](../../Adresles_Business.md#glosario)
 - **Casos de uso detallados**: [Adresles_Business.md - Fase 2](../../Adresles_Business.md#fase-2-casos-de-uso)
 - **Modelo de datos**: [Adresles_Business.md - Fase 3](../../Adresles_Business.md#fase-3-modelado-de-datos)
-- **Backend Standards**: [openspec/specs/backend-standards.mdc](../../openspec/specs/backend-standards.mdc)
+- **Backend Standards**: [/.cursor/rules/backend-standards.mdc](../../.cursor/rules/backend-standards.mdc)
 
 ---
 
