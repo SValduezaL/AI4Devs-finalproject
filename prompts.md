@@ -11,6 +11,7 @@ Puedes añadir adicionalmente la conversación completa como link o archivo adju
 5. [Historias de usuario](#5-historias-de-usuario)
 6. [Tickets de trabajo](#6-tickets-de-trabajo)
 7. [Pull requests](#7-pull-requests)
+8. [Gestión de Documentación y Workflow de Desarrollo](#8-Gestión-de-documentación-y-workflow-de-desarrollo)
 
 ---
 
