@@ -1,4 +1,5 @@
 import type { ConversationPhase } from '../services/address.service';
+import type { ILLMService } from '../llm/llm.interface';
 
 jest.mock('@adresles/prisma-db', () => {
   const mockPrisma = {
@@ -24,21 +25,34 @@ jest.mock('../dynamodb/dynamodb.service', () => ({
   getConversationState: jest.fn().mockResolvedValue(null),
 }));
 
-jest.mock('../services/address.service', () => {
-  const actual = jest.requireActual('../services/address.service');
-  return {
-    ...actual,
-    interpretUserIntent: jest.fn().mockImplementation(async (_phase: string, msg: string) => {
-      const lower = msg.toLowerCase().trim();
-      if (['sí', 'si', 'yes', 'ok'].some((w) => lower === w || lower.startsWith(w))) {
-        return { type: 'CONFIRM' };
-      }
-      if (lower.startsWith('no') || lower === 'no') {
-        return { type: 'REJECT_AND_CORRECT', correction: msg };
-      }
-      return { type: 'UNKNOWN' };
-    }),
-  };
+// ─── Mock del servicio LLM ────────────────────────────────────────────────────
+// Simula el mismo comportamiento que el MockLLMService pero como jest.fn()
+// para poder verificar llamadas e inyectar respuestas específicas por test.
+
+const mockLLMService: jest.Mocked<ILLMService> = {
+  generateMessage: jest.fn().mockResolvedValue('[MOCK] Hola, necesitamos tu dirección.'),
+  extractAddress: jest.fn().mockResolvedValue({
+    isComplete: false,
+    missingFields: [],
+    couldBeBuilding: false,
+    address: null,
+  }),
+  interpretIntent: jest.fn().mockImplementation(async (_phase: string, msg: string) => {
+    const lower = msg.toLowerCase().trim();
+    if (['sí', 'si', 'yes', 'ok'].some((w) => lower === w || lower.startsWith(w + ' '))) {
+      return { type: 'CONFIRM' };
+    }
+    if (lower.startsWith('no') || lower === 'no') {
+      return { type: 'REJECT_AND_CORRECT', correction: msg };
+    }
+    return { type: 'UNKNOWN' };
+  }),
+};
+
+// Inyectar el mock del servicio LLM antes de que los tests se ejecuten
+beforeAll(async () => {
+  const { setLLMService } = await import('./conversation.processor');
+  setLLMService(mockLLMService);
 });
 
 describe('conversation.processor', () => {
@@ -101,6 +115,26 @@ describe('processResponseProcessor WAITING_SAVE_ADDRESS and WAITING_SAVE_ADDRESS
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    // Restaurar la implementación del mock LLM tras clearAllMocks
+    mockLLMService.interpretIntent.mockImplementation(async (_phase: string, msg: string) => {
+      const lower = msg.toLowerCase().trim();
+      if (['sí', 'si', 'yes', 'ok'].some((w) => lower === w || lower.startsWith(w + ' '))) {
+        return { type: 'CONFIRM' };
+      }
+      if (lower.startsWith('no') || lower === 'no') {
+        return { type: 'REJECT_AND_CORRECT', correction: msg };
+      }
+      return { type: 'UNKNOWN' };
+    });
+    mockLLMService.generateMessage.mockResolvedValue('[MOCK] Hola, necesitamos tu dirección.');
+    mockLLMService.extractAddress.mockResolvedValue({
+      isComplete: false,
+      missingFields: [],
+      couldBeBuilding: false,
+      address: null,
+    });
+
     const { PrismaClient } = await import('@adresles/prisma-db');
     const instance = new (PrismaClient as jest.Mock)();
     (instance.user.findUnique as jest.Mock).mockResolvedValue(baseUser);
@@ -268,6 +302,19 @@ describe('processResponseProcessor offerSaveAddress — dirección ya en libreta
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    // Restaurar la implementación del mock LLM tras clearAllMocks
+    mockLLMService.interpretIntent.mockImplementation(async (_phase: string, msg: string) => {
+      const lower = msg.toLowerCase().trim();
+      if (['sí', 'si', 'yes', 'ok'].some((w) => lower === w || lower.startsWith(w + ' '))) {
+        return { type: 'CONFIRM' };
+      }
+      if (lower.startsWith('no') || lower === 'no') {
+        return { type: 'REJECT_AND_CORRECT', correction: msg };
+      }
+      return { type: 'UNKNOWN' };
+    });
+
     const { PrismaClient } = await import('@adresles/prisma-db');
     const instance = new (PrismaClient as jest.Mock)();
     (instance.user.findUnique as jest.Mock).mockResolvedValue(baseUser);

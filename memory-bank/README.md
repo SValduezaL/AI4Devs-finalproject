@@ -1,8 +1,8 @@
 # Memory Bank - Adresles
 
 > **Contexto persistente del proyecto para sesiones de IA**  
-> **Última actualización**: 2026-03-02  
-> ✅ **Change completado**: cu03-b4-worker-address-book — libreta de direcciones (offerSaveAddress, WAITING_SAVE_ADDRESS_LABEL, pedido de alias)
+> **Última actualización**: 2026-03-08  
+> ✅ **Change completado**: llm-service-abstraction — interfaz ILLMService, OpenAILLMService, MockLLMService; Worker desacoplado de OpenAI SDK; 41 tests pasando
 
 ## 📖 Inicio Rápido
 
@@ -36,7 +36,7 @@ Decisiones clave que guían el desarrollo del proyecto:
 | [real-time-sse-patterns.md](./patterns/real-time-sse-patterns.md) | SSE con NestJS, Redis Pub/Sub con `ioredis`, `psubscribe`, RxJS `Subject`; `EventSource` con URL absoluta en Next.js | 2026-03-01 |
 | [frontend-form-patterns.md](./patterns/frontend-form-patterns.md) | Formulario-modal con `useState` local, `canSubmit` derivado, mapeo `line1`/`line2` → `street`/`full_address`, combobox con estado derivado, `safeTimeLabel`, `key` prop reset | 2026-03-01 |
 | [prisma-shared-package-patterns.md](./patterns/prisma-shared-package-patterns.md) | Schema+migraciones+seed en `packages/prisma-db`, `dependencies` vs devDependencies, `db:seed` desde root, shadow DB y checksum | 2026-03-02 |
-| [worker-testing-patterns.md](./patterns/worker-testing-patterns.md) | Mock Prisma/Redis/DynamoDB, interpretUserIntent y mockClear en specs del Worker | 2026-03-02 |
+| [worker-testing-patterns.md](./patterns/worker-testing-patterns.md) | Mock Prisma/Redis/DynamoDB; inyeccion ILLMService con setLLMService() en specs del Worker; mockClear | 2026-03-08 |
 
 Pendiente de documentar:
 - Límites de agregados DDD
@@ -88,8 +88,9 @@ Pendiente de documentar:
 | [2026-03-02](./sessions/2026-03-02-cu03-b2-worker-address-proposals.md) | CU03-B2 — Worker: Sub-journeys 2.1 y 2.3 (proponer dirección guardada) — Completado | ✅ Completado (13/13 tareas) |
 | [2026-03-02](./sessions/2026-03-02-cu03-b3-worker-registration.md) | CU03-B3 — Worker: Flujo de registro voluntario post-confirmación — Completado | ✅ Completado (27/27 tareas) |
 | [2026-03-02](./sessions/2026-03-02-cu03-b4-worker-address-book.md) | CU03-B4 — Worker: Libreta de direcciones — Completado | ✅ Completado (25/25 tareas, verif. + 2 tests) |
+| [2026-03-08](./sessions/2026-03-08-llm-service-abstraction.md) | llm-service-abstraction — Abstracción ILLMService, desacoplamiento OpenAI SDK — Completado | ✅ Completado (15/15 tareas, 41 tests) |
 
-**Próximo change**: Por definir.
+**Próximo change**: Por definir (candidatos: Journey INFORMATION con OpenAI, instrucción de idioma en todos los journeys).
 
 ## 🔄 Flujo de Trabajo
 
@@ -169,7 +170,7 @@ Este memory-bank permite a la IA:
 
 ---
 
-**Última revisión**: 2026-03-02  
+**Última revisión**: 2026-03-08  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: CU03-B4 completado — libreta de direcciones (offerSaveAddress, WAITING_SAVE_ADDRESS_LABEL, alias); worker-testing-patterns extendido (mock interpretUserIntent, mockClear para aserciones "no llamado").  
+**Cambios recientes**: llm-service-abstraction completado — ILLMService + OpenAILLMService + MockLLMService; Worker desacoplado del OpenAI SDK; setLLMService() como patrón DI en Worker; worker-testing-patterns actualizado (ILLMService injection).  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo

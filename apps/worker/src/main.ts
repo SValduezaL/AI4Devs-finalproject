@@ -1,7 +1,22 @@
 import * as dotenv from 'dotenv';
 dotenv.config({ override: true });
 import { Worker } from 'bullmq';
-import { conversationProcessor, processResponseProcessor } from './processors/conversation.processor';
+import { conversationProcessor, processResponseProcessor, setLLMService } from './processors/conversation.processor';
+import { OpenAILLMService } from './llm/openai-llm.service';
+import { MockLLMService } from './llm/mock-llm.service';
+
+// ─── LLM service — instancia el servicio real o el mock según la API key ─────
+
+const apiKey = process.env.OPENAI_API_KEY;
+if (apiKey) {
+  setLLMService(new OpenAILLMService(apiKey));
+  console.log('[Worker] Usando OpenAI LLM service (gpt-4o-mini)');
+} else {
+  setLLMService(new MockLLMService());
+  console.warn('[Worker] OPENAI_API_KEY no configurada — usando mock LLM service');
+}
+
+// ─── BullMQ Workers ───────────────────────────────────────────────────────────
 
 const redisUrl = process.env.REDIS_URL ?? 'redis://localhost:6379';
 const connection = parseRedisUrl(redisUrl);
@@ -34,7 +49,7 @@ responseWorker.on('failed', (job, err) => {
   console.error(`[Worker:response] Job ${job?.id} failed:`, err.message);
 });
 
-console.log('[Worker] Listening for process-conversation and process-response jobs...');
+console.log('[Worker] Escuchando jobs de process-conversation y process-response...');
 
 function parseRedisUrl(url: string): { host: string; port: number; password?: string } {
   try {

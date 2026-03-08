@@ -146,7 +146,7 @@ Configuración implementada:
 
 - **Optimización de prompts**: Requiere iteración continua para reducir tokens
 - **Fine-tuning futuro**: Considerar fine-tuning para reducir costes (~50% reduction)
-- **Abstracción LLM**: Implementar interface para permitir cambio de proveedor
+- ~~**Abstracción LLM**: Implementar interface para permitir cambio de proveedor~~ → ✅ **Resuelta el 2026-03-08** (ver nota de revisión)
 
 ---
 
@@ -362,15 +362,27 @@ Con 1000 conversaciones/día:
 - El Worker (`apps/worker/`) implementa el procesador de conversaciones con `gpt-4o-mini` directamente, sin la capa de abstracción `ILLMService` documentada en el ADR (deuda técnica pendiente)
 - El change `cu03-b4-worker-address-book` completó la implementación del procesador con 9 fases de estado
 
+### 2026-03-08: Abstracción ILLMService implementada
+
+- Change `llm-service-abstraction` resuelve la deuda técnica documentada en la revisión anterior
+- Implementada la interfaz `ILLMService` con 3 métodos específicos: `generateMessage`, `extractAddress`, `interpretIntent`
+- Estructura final en `apps/worker/src/llm/`:
+  - `llm.interface.ts` — contrato `ILLMService` con tipos
+  - `openai-llm.service.ts` — implementación con `gpt-4o-mini` (parámetros idénticos al código anterior)
+  - `mock-llm.service.ts` — implementación sin red que consolida los mocks dispersos
+- `main.ts` instancia `OpenAILLMService` o `MockLLMService` según `OPENAI_API_KEY` e inyecta vía `setLLMService()`
+- `address.service.ts` e `conversation.processor.ts` ya no importan `openai` directamente
+- 41 tests pasando sin regresiones
+
 ### Próximas Iteraciones
 
-- **Abstracción LLM**: Implementar interface `ILLMService` para desacoplar el proveedor
 - **Evaluación de modelo**: Comparar `gpt-4o-mini` vs `gpt-4o` cuando el volumen justifique el análisis
 - **Fine-tuning**: Considerar tras 1000 conversaciones reales (reducción 50% coste)
 - **Prompt optimization**: Iterar con A/B testing para reducir tokens
+- **Journey INFORMATION con OpenAI**: El mensaje de confirmación de pedido es actualmente texto estático; pendiente de mejora con generación dinámica
 
 ---
 
 **Creado por**: Sergio  
-**Última actualización**: 2026-03-07  
+**Última actualización**: 2026-03-08  
 **Próxima revisión**: Tras 1 mes en producción (validar coste real y calidad)

@@ -1,7 +1,6 @@
 // dotenv is loaded in main.ts with override:true
 import { Job } from 'bullmq';
 import { PrismaClient } from '@adresles/prisma-db';
-import OpenAI from 'openai';
 import {
   ProcessConversationJobData,
   ProcessResponseJobData,
@@ -12,18 +11,15 @@ import { publishConversationUpdate, publishConversationComplete } from '../redis
 import {
   ConversationState,
   PendingAddress,
-  extractAddressFromConversation,
   validateWithGoogleMaps,
   buildPendingAddress,
   buildAddressProposalMessage,
   pendingAddressNeedsBuildingDetails,
-  interpretUserIntent,
   buildAddressDisplayText,
   buildDisambiguationMessage,
   buildBuildingDetailsRequest,
   buildConfirmationRequest,
   buildAddressNotFoundMessage,
-  buildUnknownIntentMessage,
   buildSyncSuccessMessage,
   buildRegistrationOfferMessage,
   buildRegistrationEmailRequestMessage,
@@ -37,11 +33,18 @@ import {
   simulateEcommerceSync,
   ConversationMessage,
 } from '../services/address.service';
+import type { ILLMService } from '../llm/llm.interface';
+import { MockLLMService } from '../llm/mock-llm.service';
 
 const prisma = new PrismaClient();
 
-// ─── Job data types ───────────────────────────────────────────────────────────
-// Imported from @adresles/shared-types — single source of truth shared with API
+// ─── LLM service — defaults to mock, replaced by main.ts with real service ───
+
+let _llmService: ILLMService = new MockLLMService();
+
+export function setLLMService(svc: ILLMService): void {
+  _llmService = svc;
+}
 
 // ─── Language helpers ─────────────────────────────────────────────────────────
 
@@ -61,6 +64,7 @@ function buildGetAddressSystemPrompt(language: string): string {
     `You are Adresles, a friendly and professional virtual assistant for e-commerce platforms. ` +
     `Your role is to help customers complete their purchases by confirming their delivery address via chat. ` +
     `Always respond in ${language}. ` +
+    `If the user explicitly asks you to respond in a different language, honor that request for the rest of this conversation. ` +
     `Be concise, warm, and professional. Never ask for payment information. ` +
     `When asking for an address, request: street with number, floor/door if applicable, postal code, and city.`
   );
@@ -85,28 +89,6 @@ function buildGetAddressUserPrompt(params: {
     `4. Ask clearly for: street and number, floor/door (if applicable), postal code, and city\n\n` +
     `Keep it under 3 short paragraphs. Do not include any placeholder text.`
   );
-}
-
-async function generateWithOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    console.warn('[Worker] OPENAI_API_KEY not set — using mock response');
-    return '[MOCK OpenAI] Hola! Hemos recibido tu pedido y necesitamos tu dirección de entrega para completar el envío. Por favor, indícanos tu calle y número, código postal y ciudad.';
-  }
-
-  const client = new OpenAI({ apiKey });
-  const response = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    max_tokens: 300,
-    temperature: 0.7,
-  });
-
-  return response.choices[0]?.message?.content ?? '';
 }
 
 // ─── process-conversation ─────────────────────────────────────────────────────
@@ -273,7 +255,7 @@ async function processGetAddressJourney(
 
   // ─── Sub-journey 2.2 / 2.4: pregunta dirección estándar ──
   const userPrompt = buildGetAddressUserPrompt({ name, storeName, orderNumber: order.externalOrderNumber, language });
-  const assistantMessage = await generateWithOpenAI(systemPrompt, userPrompt);
+  const assistantMessage = await _llmService.generateMessage({ systemPrompt, userPrompt });
 
   await saveMessage(conversationId, 'system', systemPrompt);
   await saveMessage(conversationId, 'user', userPrompt);
@@ -370,7 +352,7 @@ async function handleAddressProposalConfirm(ctx: HandlerContext) {
   const { userMessage, state, language } = ctx;
   const pending = state.pendingAddress!;
 
-  const intent = await interpretUserIntent('WAITING_CONFIRMATION', userMessage, language);
+  const intent = await _llmService.interpretIntent('WAITING_CONFIRMATION', userMessage, language);
   console.log(`[PROCESS_RESPONSE] Address proposal confirm intent: ${intent.type}`);
 
   if (intent.type === 'CONFIRM') {
@@ -395,7 +377,7 @@ async function handleWaitingAddress(ctx: HandlerContext) {
     content: m.content,
   }));
 
-  const extracted = await extractAddressFromConversation(messages, language);
+  const extracted = await _llmService.extractAddress(messages, language);
   console.log(`[PROCESS_RESPONSE] Extracted:`, JSON.stringify(extracted));
 
   if (!extracted.isComplete || !extracted.address) {
@@ -468,7 +450,7 @@ async function handleDisambiguation(ctx: HandlerContext) {
   const { conversationId, userMessage, state, language } = ctx;
   const options = state.gmapsOptions ?? [];
 
-  const intent = await interpretUserIntent('WAITING_DISAMBIGUATION', userMessage, language);
+  const intent = await _llmService.interpretIntent('WAITING_DISAMBIGUATION', userMessage, language);
   console.log(`[PROCESS_RESPONSE] Disambiguation intent: ${intent.type}`);
 
   if (intent.type === 'CHOOSE_OPTION' && intent.choiceIndex !== undefined) {
@@ -504,7 +486,7 @@ async function handleBuildingDetails(ctx: HandlerContext) {
   const { conversationId, userMessage, state, language } = ctx;
   const pending = state.pendingAddress!;
 
-  const intent = await interpretUserIntent('WAITING_BUILDING_DETAILS', userMessage, language);
+  const intent = await _llmService.interpretIntent('WAITING_BUILDING_DETAILS', userMessage, language);
   console.log(`[PROCESS_RESPONSE] Building details intent: ${intent.type}`);
 
   if (intent.type === 'CONFIRM_NO_BUILDING_DETAILS') {
@@ -533,10 +515,10 @@ async function handleBuildingDetails(ctx: HandlerContext) {
 }
 
 async function handleConfirmation(ctx: HandlerContext) {
-  const { conversationId, orderId, userMessage, state, language, user } = ctx;
+  const { conversationId, userMessage, state, language } = ctx;
   const pending = state.pendingAddress!;
 
-  const intent = await interpretUserIntent('WAITING_CONFIRMATION', userMessage, language);
+  const intent = await _llmService.interpretIntent('WAITING_CONFIRMATION', userMessage, language);
   console.log(`[PROCESS_RESPONSE] Confirmation intent: ${intent.type}`);
 
   if (intent.type === 'CONFIRM') {
@@ -544,7 +526,6 @@ async function handleConfirmation(ctx: HandlerContext) {
   }
 
   if (intent.type === 'REJECT_AND_CORRECT') {
-    // Treat the correction as a new address attempt
     const correctedCtx: HandlerContext = {
       ...ctx,
       userMessage: intent.correction ?? userMessage,
@@ -564,7 +545,7 @@ async function handleWaitingRegister(ctx: HandlerContext) {
   const { conversationId, state, language } = ctx;
   const confirmedAddress = state.confirmedAddress!;
 
-  const intent = await interpretUserIntent('WAITING_CONFIRMATION', ctx.userMessage, language);
+  const intent = await _llmService.interpretIntent('WAITING_CONFIRMATION', ctx.userMessage, language);
   console.log(`[PROCESS_RESPONSE] Registration offer intent: ${intent.type}`);
 
   if (intent.type === 'CONFIRM') {
@@ -663,7 +644,7 @@ async function offerSaveAddress(ctx: HandlerContext, confirmedAddress: PendingAd
 async function handleWaitingSaveAddress(ctx: HandlerContext) {
   const { conversationId, userMessage, state, language } = ctx;
 
-  const intent = await interpretUserIntent('WAITING_CONFIRMATION', userMessage, language);
+  const intent = await _llmService.interpretIntent('WAITING_CONFIRMATION', userMessage, language);
   console.log(`[PROCESS_RESPONSE] WAITING_SAVE_ADDRESS intent: ${intent.type}`);
 
   if (intent.type === 'CONFIRM') {
@@ -731,7 +712,6 @@ async function advanceFromPending(ctx: HandlerContext, pending: PendingAddress) 
     return { conversationId, status: 'waiting_building_details', message: msg };
   }
 
-  // Go straight to confirmation
   const newState: ConversationState = { phase: 'WAITING_CONFIRMATION', pendingAddress: pending };
   await saveConversationState(conversationId, newState);
   const msg = buildConfirmationRequest(pending, language);

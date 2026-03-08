@@ -931,6 +931,76 @@ actualiza @memory-bank , revisando que se incluya lo realizado en esta sersión
 
 > **Resumen de objetivos alcanzados:** Tras confirmar 4/4 artefactos completos y 27/27 tareas marcadas `[x]`, se evaluó el estado de sync de los delta specs. Los delta specs de `admin-api` y `admin-dashboard` ya estaban sincronizados con los specs principales (vía `/update-docs` de la sesión anterior). La delta spec de la nueva capability `users-sorting-filters` no existía aún en `openspec/specs/`. El usuario eligió sincronizar antes de archivar: se creó `openspec/specs/users-sorting-filters/spec.md` con el contenido completo (6 requirements, ~30 scenarios). Finalmente se movió el directorio del change a `openspec/changes/archive/2026-02-26-t03-users-sorting-filters/`.
 
+#### llm-service-abstraction
+
+**Prompt 1** *(Modo Agent):*
+
+```
+/opsx/explore investiga cómo está implementado el uso de OpenAI para generar hilos de conversación con los usuarios y resolver diferentes tareas, como por ejemplo infromar de la compra realizada en una tienda online, solicitar la dirección de entrega si no está registada en la orden de compra, proponer la dirección de entrega predeterminada del usuario guardada en su libreta Adresles, o, en su defecto, la que el usuario tiene guardada en la tienda online (si es que tiene), o invitar al usuario a registrarse. Ten en cuanta de que el "Agente Adresles" tiene que usar el modelo de ChatGPT para realizar diferentes tareas, las cuales dependen dela infromación obtenida de la orden de compra o la que se tiene registarda del usuario.
+Elabora un plan detallado de lo que faltaría realizar para poder implementar este plan con éxito.
+Pregúntame todo aquello que necesites para completar el contexto y darme una respuesta más acertada. Pregúntame también qué opciones quiero barajar si es que tienes diferentes planes de acción.
+```
+
+> **Resumen de objetivos alcanzados:** Se entró en modo de exploración (`/opsx/explore`) para analizar en profundidad cómo estaba implementado el uso de OpenAI en el Worker. Se identificaron los tres puntos de acoplamiento directo con el SDK (`getOpenAIClient`, `extractAddressFromConversation`, `interpretUserIntent` en `address.service.ts` y `generateWithOpenAI` en `conversation.processor.ts`). Se elaboró un plan detallado con 5 tareas pendientes: Abstracción `ILLMService`, mejora del Journey INFORMATION con OpenAI, detección de idioma del usuario, múltiples direcciones y recordatorios. Se formularon preguntas de clarificación al usuario sobre modo regalo, journey de información, múltiples direcciones, reminders, abstracción LLM y gestión de idioma.
+
+---
+
+**Prompt 2** *(Modo Agent):*
+
+```
+Preifiero que se use siempre primero el user.preferredLanguage, pero dejar claro al asistente que debe cambiar de idioma si el usuario se lo pide (pero no actualizar user.preferredLanguage, eso lo tendrá que hacer el usuario desde la plataforma, cuando se implmente).
+```
+
+> **Resumen de objetivos alcanzados:** Se tomaron todas las decisiones de clarificación: modo regalo → post-MVP; journey INFORMATION → mejorar con OpenAI en futura iteración; múltiples direcciones → comportamiento actual (proponer por defecto) aceptable para MVP; reminders → post-MVP; `ILLMService` → implementar de inmediato; idioma → usar siempre `user.preferredLanguage` como idioma base, pero el system prompt debe indicar al asistente que cambie de idioma si el usuario lo solicita explícitamente durante la conversación, sin actualizar `user.preferredLanguage` en base de datos.
+
+---
+
+**Prompt 3** *(Modo Agent):*
+
+```
+Sí, pero asegurándote que cuando implementes la primera tarea `Tarea 1 — Abstracción ILLMService` no dejes código basura de la anterior implementación, lipia bien el código y comprueba que no se rompa nada de lo hecho con la ejecución de los pertinenetes tests.
+```
+
+> **Resumen de objetivos alcanzados:** Se ejecutó `/opsx:ff llm-service-abstraction` generando los 4 artefactos OpenSpec (`proposal.md`, `specs/llm-service-interface/spec.md`, `design.md`, `tasks.md` con 15 tareas). A continuación se implementaron las 15 tareas completas: creación de `apps/worker/src/llm/llm.interface.ts` (interfaz `ILLMService` con 3 métodos semánticos), `openai-llm.service.ts` (implementación real con `gpt-4o-mini`) y `mock-llm.service.ts` (implementación sin red consolidando los mocks dispersos); limpieza total de `address.service.ts` (eliminados `getOpenAIClient`, `extractAddressFromConversation`, `interpretUserIntent`, imports de OpenAI) y `conversation.processor.ts` (eliminada `generateWithOpenAI`, añadido `setLLMService()`); actualización de `main.ts` para inyectar `OpenAILLMService` o `MockLLMService` según `OPENAI_API_KEY`; y actualización de `conversation.processor.spec.ts` para usar `jest.Mocked<ILLMService>` con `setLLMService()` en `beforeAll`. Todos los 41 tests pasaron con 0 fallos.
+
+---
+
+**Prompt 4** *(Modo Agent):*
+
+```
+/opsx/verify @openspec/changes/llm-service-abstraction
+```
+
+> **Resumen de objetivos alcanzados:** Se ejecutó la verificación completa del change en tres dimensiones. **Completeness**: 15/15 tareas marcadas `[x]`, 4/4 artefactos en estado `done`, 5/5 requisitos de la spec cubiertos. **Correctness**: todos los escenarios de spec cubiertos en el código — `ILLMService` en `llm.interface.ts`, `OpenAILLMService` y `MockLLMService` implementados, código OpenAI eliminado de `address.service.ts` y `conversation.processor.ts`, 41 tests pasando. **Coherence**: decisiones de `design.md` (3 métodos semánticos, setter para DI, `MockLLMService` como valor por defecto) correctamente implementadas y consistentes con los patrones del proyecto. Veredicto final: sin issues críticos ni warnings — change listo para archivar.
+
+---
+
+**Prompt 5** *(Modo Agent):*
+
+```
+Revisa si tienes que actualizar el memory-bank según esta indicación:
+'''
+Después de una Sesión (Post-trabajo manual, 2-5 min)
+Solo si aplica:
+✅ Nueva decisión arquitectural → Crea ADR en architecture/
+✅ Patrón emergente importante → Documenta en patterns/
+✅ Aprendizaje significativo → Registra en sessions/
+'''
+Revisa también los cambios que tengas que hacer en el @memory-bank/README.md del memory-bank, y actualiza o genera los documentos necesarios en consecuencia
+```
+
+> **Resumen de objetivos alcanzados:** Se identificaron y realizaron 3 actualizaciones y 1 documento nuevo en el memory-bank. **ADR-004** (`memory-bank/architecture/004-openai-gpt4.md`): marcada la deuda técnica `ILLMService` como resuelta, añadida nota de revisión 2026-03-08 documentando la implementación, actualizado "Próximas Iteraciones". **`worker-testing-patterns.md`**: sección "Mock de interpretUserIntent" completamente reemplazada por el nuevo patrón "Inyección de ILLMService con `setLLMService()`" (`jest.Mocked<ILLMService>` en `beforeAll`, restauración de `mockImplementation` en `beforeEach`). **Nueva sesión** `memory-bank/sessions/2026-03-08-llm-service-abstraction.md`: documenta qué se implementó, decisiones clave (por qué 3 métodos vs `call()` genérico, por qué setter vs constructor injection) y aprendizajes. **README.md**: fecha, tabla de sesiones, sección "Próximo change" y "Cambios recientes" actualizados.
+
+---
+
+**Prompt 6** *(Modo Agent):*
+
+```
+/opsx/archive @openspec/changes/llm-service-abstraction
+```
+
+> **Resumen de objetivos alcanzados:** Tras confirmar 4/4 artefactos completos y 15/15 tareas marcadas `[x]`, se evaluó el estado de sync de los delta specs. La delta spec `llm-service-interface` no existía en `openspec/specs/`. El usuario eligió sincronizar antes de archivar: se creó `openspec/specs/llm-service-interface/spec.md` con el contenido completo (5 requisitos, 11 escenarios). Finalmente se movió el directorio del change a `openspec/changes/archive/2026-03-08-llm-service-abstraction/`. Ciclo de vida completo: Petición → Proposal → Specs + Design → Tasks → Implementación → Verificación → Archivado.
+
 ---
 
 ### 7. Pull Requests

@@ -1,7 +1,7 @@
 # Patrones de Testing — Worker (BullMQ)
 
-> **Última actualización**: 2026-03-02  
-> **Origen**: CU03-B3 Worker Registration + fix "open handles"; CU03-B4 libreta (interpretUserIntent mock, mockClear)
+> **Última actualización**: 2026-03-08  
+> **Origen**: CU03-B3 Worker Registration + fix "open handles"; CU03-B4 libreta (interpretUserIntent mock, mockClear); llm-service-abstraction (ILLMService injection pattern)
 
 ---
 
@@ -66,34 +66,78 @@ Para specs que solo usan `redis-publisher`, se mockea `ioredis` en lugar del mó
 
 ---
 
-## Patrón: Mock de interpretUserIntent para evitar llamadas a OpenAI
+## Patrón: Inyección de ILLMService para evitar llamadas a OpenAI
+
+> ⚠️ **Patrón anterior obsoleto** (antes del change `llm-service-abstraction`): se mockeaba `interpretUserIntent` directamente desde `address.service` con `jest.mock('../services/address.service', () => ({ ...actual, interpretUserIntent: jest.fn() }))`. Ese patrón ya no aplica porque `interpretUserIntent` fue eliminada de `address.service.ts`.
 
 ### Problema
 
-Los handlers `handleWaitingSaveAddress`, `handleConfirmation`, etc. llaman a `interpretUserIntent()` (OpenAI) para clasificar Sí/No. En tests esto provoca 429 (quota) o lentitud.
+Los handlers del Worker (`handleWaitingSaveAddress`, `handleConfirmation`, `handleWaitingAddress`, etc.) llaman al servicio LLM para clasificar intenciones y extraer direcciones. En tests esto provoca 429 (quota) o lentitud, y además requería `OPENAI_API_KEY`.
 
-### Solución: Mockear interpretUserIntent en address.service
+Tras el change `llm-service-abstraction`, todo acceso al LLM pasa por la interfaz `ILLMService` y la función `setLLMService()` exportada por `conversation.processor.ts`.
+
+### Solución: Inyectar jest.Mocked<ILLMService> antes de los tests
 
 ```typescript
-jest.mock('../services/address.service', () => {
-  const actual = jest.requireActual('../services/address.service');
-  return {
-    ...actual,
-    interpretUserIntent: jest.fn().mockImplementation(async (_phase: string, msg: string) => {
-      const lower = msg.toLowerCase().trim();
-      if (['sí', 'si', 'yes', 'ok'].some((w) => lower === w || lower.startsWith(w)))
-        return { type: 'CONFIRM' };
-      if (lower.startsWith('no') || lower === 'no')
-        return { type: 'REJECT_AND_CORRECT', correction: msg };
-      return { type: 'UNKNOWN' };
-    }),
-  };
+import type { ILLMService } from '../llm/llm.interface';
+
+// 1. Crear el mock del servicio LLM con jest.fn()
+const mockLLMService: jest.Mocked<ILLMService> = {
+  generateMessage: jest.fn().mockResolvedValue('[MOCK] Hola, necesitamos tu dirección.'),
+  extractAddress: jest.fn().mockResolvedValue({
+    isComplete: false,
+    missingFields: [],
+    couldBeBuilding: false,
+    address: null,
+  }),
+  interpretIntent: jest.fn().mockImplementation(async (_phase: string, msg: string) => {
+    const lower = msg.toLowerCase().trim();
+    if (['sí', 'si', 'yes', 'ok'].some((w) => lower === w || lower.startsWith(w + ' ')))
+      return { type: 'CONFIRM' };
+    if (lower.startsWith('no') || lower === 'no')
+      return { type: 'REJECT_AND_CORRECT', correction: msg };
+    return { type: 'UNKNOWN' };
+  }),
+};
+
+// 2. Inyectar ANTES de que los tests se ejecuten (beforeAll con dynamic import)
+beforeAll(async () => {
+  const { setLLMService } = await import('./conversation.processor');
+  setLLMService(mockLLMService);
+});
+
+// 3. Después de jest.clearAllMocks(), restaurar las implementaciones en beforeEach
+beforeEach(async () => {
+  jest.clearAllMocks();
+  mockLLMService.interpretIntent.mockImplementation(async (_phase: string, msg: string) => {
+    const lower = msg.toLowerCase().trim();
+    if (['sí', 'si', 'yes', 'ok'].some((w) => lower === w || lower.startsWith(w + ' ')))
+      return { type: 'CONFIRM' };
+    if (lower.startsWith('no') || lower === 'no')
+      return { type: 'REJECT_AND_CORRECT', correction: msg };
+    return { type: 'UNKNOWN' };
+  });
+  mockLLMService.generateMessage.mockResolvedValue('[MOCK] Hola, necesitamos tu dirección.');
+  mockLLMService.extractAddress.mockResolvedValue({
+    isComplete: false,
+    missingFields: [],
+    couldBeBuilding: false,
+    address: null,
+  });
+  // ... resto de mocks de Prisma/DynamoDB ...
 });
 ```
 
+### Por qué jest.clearAllMocks() requiere restaurar implementaciones
+
+`jest.clearAllMocks()` limpia los registros de llamadas (`mock.calls`, `mock.results`) pero NO elimina las implementaciones definidas con `mockImplementation()`. Sin embargo, si en un test previo se usó `mockResolvedValueOnce` o se modificó la implementación, el beforeEach garantiza un estado limpio y determinístico para cada test.
+
 ### Regla
 
-> Si el spec del processor cubre fases que usan `interpretUserIntent` (WAITING_SAVE_ADDRESS, WAITING_CONFIRMATION, etc.), mockear esa función para devolver intents determinísticos sin OpenAI.
+> Cualquier spec del Worker que pruebe handlers que usan LLM (fases: WAITING_ADDRESS, WAITING_CONFIRMATION, WAITING_DISAMBIGUATION, WAITING_BUILDING_DETAILS, WAITING_REGISTER, WAITING_SAVE_ADDRESS) debe:
+> 1. Crear `mockLLMService: jest.Mocked<ILLMService>` a nivel de módulo (fuera de describe)
+> 2. Inyectarlo con `setLLMService(mockLLMService)` en `beforeAll`
+> 3. Restaurar implementaciones en `beforeEach` después de `jest.clearAllMocks()`
 
 ---
 

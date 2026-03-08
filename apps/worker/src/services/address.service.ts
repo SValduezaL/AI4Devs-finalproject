@@ -1,5 +1,3 @@
-import OpenAI from 'openai';
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type ConversationPhase =
@@ -100,101 +98,6 @@ export interface ConversationMessage {
   content: string;
 }
 
-// ─── OpenAI helpers ───────────────────────────────────────────────────────────
-
-function getOpenAIClient(): OpenAI | null {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-  return new OpenAI({ apiKey });
-}
-
-// ─── Address extraction ───────────────────────────────────────────────────────
-
-const ADDRESS_EXTRACTION_SYSTEM = `You are an address extraction assistant.
-Given a conversation, extract the delivery address provided by the user.
-Respond ONLY with valid JSON (no markdown) matching:
-{
-  "isComplete": boolean,
-  "missingFields": string[],
-  "couldBeBuilding": boolean,
-  "address": {
-    "street": string, "number": string|null,
-    "block": string|null, "staircase": string|null,
-    "floor": string|null, "door": string|null,
-    "additionalInfo": string|null,
-    "postalCode": string, "city": string,
-    "province": string|null, "country": string,
-    "fullAddress": string
-  } | null
-}
-Rules:
-- isComplete=true requires street+number (if applicable), postalCode, city.
-- couldBeBuilding=true if the address is likely an apartment building (urban, multi-floor).
-- fullAddress: single-line normalized string.
-- If nothing extractable, set isComplete=false and address=null.`;
-
-export async function extractAddressFromConversation(
-  messages: ConversationMessage[],
-  language: string,
-): Promise<ExtractedAddress> {
-  const client = getOpenAIClient();
-
-  if (!client) {
-    return mockExtractAddress(messages);
-  }
-
-  const text = messages
-    .filter((m) => m.role !== 'system')
-    .map((m) => `${m.role === 'assistant' ? 'Assistant' : 'User'}: ${m.content}`)
-    .join('\n');
-
-  const res = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: ADDRESS_EXTRACTION_SYSTEM },
-      { role: 'user', content: `Language: ${language}\n\nConversation:\n${text}` },
-    ],
-    response_format: { type: 'json_object' },
-    max_tokens: 500,
-    temperature: 0,
-  });
-
-  try {
-    return JSON.parse(res.choices[0]?.message?.content ?? '{}') as ExtractedAddress;
-  } catch {
-    return { isComplete: false, missingFields: [], couldBeBuilding: false, address: null };
-  }
-}
-
-function mockExtractAddress(messages: ConversationMessage[]): ExtractedAddress {
-  const lastUser = [...messages].reverse().find((m) => m.role === 'user');
-  const content = lastUser?.content ?? '';
-  const hasPostal = /\b\d{5}\b/.test(content);
-  const hasCity = content.length > 10;
-
-  if (!hasPostal || !hasCity) {
-    return {
-      isComplete: false,
-      missingFields: [...(!hasPostal ? ['código postal'] : []), ...(!hasCity ? ['calle y número'] : [])],
-      couldBeBuilding: false,
-      address: null,
-    };
-  }
-
-  const postalMatch = content.match(/\b(\d{5})\b/);
-  return {
-    isComplete: true,
-    missingFields: [],
-    couldBeBuilding: false,
-    address: {
-      street: 'Calle Mock', number: '1', block: null, staircase: null,
-      floor: null, door: null, additionalInfo: null,
-      postalCode: postalMatch?.[1] ?? '28001', city: 'Madrid',
-      province: 'Madrid', country: 'España', fullAddress: content,
-    },
-  };
-}
-
 // ─── Google Maps validation ───────────────────────────────────────────────────
 
 type GmapsAddressComponent = {
@@ -207,9 +110,7 @@ function extractComponent(components: GmapsAddressComponent[], type: string): st
   return components.find((c) => c.types.includes(type))?.long_name ?? null;
 }
 
-export async function validateWithGoogleMaps(
-  fullAddress: string,
-): Promise<GmapsResult[]> {
+export async function validateWithGoogleMaps(fullAddress: string): Promise<GmapsResult[]> {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
@@ -288,114 +189,6 @@ export function pendingAddressNeedsBuildingDetails(pending: PendingAddress): boo
     !pending.floor &&
     !pending.door
   );
-}
-
-// ─── Intent interpretation ────────────────────────────────────────────────────
-
-const INTENT_SYSTEM = `You are an intent classifier for a delivery address chatbot.
-Given the current phase and user message, respond ONLY with valid JSON (no markdown):
-{
-  "type": "CONFIRM"|"REJECT_AND_CORRECT"|"CHOOSE_OPTION"|"PROVIDE_BUILDING_DETAILS"|"CONFIRM_NO_BUILDING_DETAILS"|"UNKNOWN",
-  "choiceIndex": number|null,      // 0-based, for CHOOSE_OPTION
-  "correction": string|null,       // for REJECT_AND_CORRECT
-  "buildingDetails": {             // for PROVIDE_BUILDING_DETAILS
-    "block": string|null, "staircase": string|null,
-    "floor": string|null, "door": string|null, "additionalInfo": string|null
-  }|null
-}
-Rules:
-- CONFIRM: user agrees, says "yes/sí/correcto/ok/confirmo/perfecto".
-- REJECT_AND_CORRECT: user says "no" or provides a correction.
-- CHOOSE_OPTION: user picks a numbered option (1, 2, "primera", "segunda", etc.). choiceIndex is 0-based.
-- PROVIDE_BUILDING_DETAILS: user gives floor, door, block or staircase info.
-- CONFIRM_NO_BUILDING_DETAILS: user says it's a house/local, or "no hace falta", "no tiene", "es una casa", etc.
-- UNKNOWN: anything else.`;
-
-export async function interpretUserIntent(
-  phase: ConversationPhase,
-  userMessage: string,
-  language: string,
-): Promise<UserIntent> {
-  const client = getOpenAIClient();
-
-  if (!client) {
-    return mockInterpretIntent(phase, userMessage);
-  }
-
-  const res = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: INTENT_SYSTEM },
-      {
-        role: 'user',
-        content: `Phase: ${phase}\nLanguage: ${language}\nUser message: "${userMessage}"`,
-      },
-    ],
-    response_format: { type: 'json_object' },
-    max_tokens: 200,
-    temperature: 0,
-  });
-
-  try {
-    return JSON.parse(res.choices[0]?.message?.content ?? '{}') as UserIntent;
-  } catch {
-    return { type: 'UNKNOWN' };
-  }
-}
-
-function mockInterpretIntent(phase: ConversationPhase, msg: string): UserIntent {
-  const lower = msg.toLowerCase().trim();
-
-  const confirmWords = ['sí', 'si', 'yes', 'ok', 'correcto', 'confirmo', 'perfecto', 'vale', 'de acuerdo'];
-  if (confirmWords.some((w) => lower === w || lower.startsWith(w + ' ') || lower.endsWith(' ' + w))) {
-    if (phase === 'WAITING_BUILDING_DETAILS') return { type: 'CONFIRM_NO_BUILDING_DETAILS' };
-    return { type: 'CONFIRM' };
-  }
-
-  const noDetailsWords = ['no hace falta', 'no tiene', 'es una casa', 'es un local', 'unifamiliar', 'chalet'];
-  if (noDetailsWords.some((w) => lower.includes(w))) {
-    return { type: 'CONFIRM_NO_BUILDING_DETAILS' };
-  }
-
-  // Numbered choice
-  const choiceMap: Record<string, number> = { '1': 0, 'primera': 0, '2': 1, 'segunda': 1, '3': 2, 'tercera': 2 };
-  for (const [k, v] of Object.entries(choiceMap)) {
-    if (lower === k || lower.startsWith(k + ' ') || lower.startsWith('opción ' + (v + 1))) {
-      return { type: 'CHOOSE_OPTION', choiceIndex: v };
-    }
-  }
-
-  // Building details keywords
-  const buildingKeywords = ['piso', 'puerta', 'bloque', 'escalera', 'planta', 'ático', 'bajo'];
-  if (buildingKeywords.some((w) => lower.includes(w))) {
-    const floorMatch = lower.match(/(?:piso|planta|ático)\s*([0-9]+[ºª]?|bajo|ático)/i);
-    const doorMatch = lower.match(/(?:puerta|letra)\s*([a-z0-9]+)/i);
-    const blockMatch = lower.match(/(?:bloque|bl\.?)\s*([a-z0-9]+)/i);
-    const stairMatch = lower.match(/(?:escalera|esc\.?)\s*([a-z0-9]+)/i);
-    return {
-      type: 'PROVIDE_BUILDING_DETAILS',
-      buildingDetails: {
-        floor: floorMatch?.[1] ?? undefined,
-        door: doorMatch?.[1] ?? undefined,
-        block: blockMatch?.[1] ?? undefined,
-        staircase: stairMatch?.[1] ?? undefined,
-        additionalInfo: undefined,
-      },
-    };
-  }
-
-  // If starts with "no", treat as rejection/correction
-  if (lower.startsWith('no ') || lower === 'no') {
-    if (phase === 'WAITING_BUILDING_DETAILS') return { type: 'CONFIRM_NO_BUILDING_DETAILS' };
-    return { type: 'REJECT_AND_CORRECT', correction: msg };
-  }
-
-  // If it looks like a new address, treat as correction
-  if (lower.includes('calle') || lower.includes('avenida') || lower.includes('plaza') || /\d{5}/.test(lower)) {
-    return { type: 'REJECT_AND_CORRECT', correction: msg };
-  }
-
-  return { type: 'UNKNOWN' };
 }
 
 // ─── Message builders ─────────────────────────────────────────────────────────
