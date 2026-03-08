@@ -1083,7 +1083,104 @@ En función del nuevo memory-bank creado:
 
 ---
 
-### **8.3. Principios de Integración Memory-Bank + OpenSpec**
+### **8.3. Refinamiento de OpenSpec con más Agentes**
+
+**Prompt 1** *(Modo Plan):*
+
+```
+You are working inside a repository that uses **Cursor + OpenSpec** for AI-assisted development.
+
+Your task is to **analyze the repository configuration and extend the agent system and workflow** so that OpenSpec artifacts and Cursor agents work in a structured multi-agent development process.
+
+Do NOT start generating files immediately.
+
+Follow the steps below carefully.
+
+---
+
+# 1. Repository Analysis (MANDATORY)
+
+First perform a deep analysis of the repository to understand how AI development is currently configured.
+
+Read and analyze carefully:
+
+@.cursor/rules 
+@.cursor/commands 
+@.cursor/skills 
+@openspec/.agents 
+@openspec/.commands 
+@openspec/specs 
+
+From this analysis determine:
+
+1. The current development workflow used by OpenSpec.
+2. Existing agents already defined (likely `backend-developer` and `frontend-developer`).
+3. Existing architecture conventions defined in `.cursor/rules`.
+4. Coding standards, testing standards, documentation standards.
+5. The typical structure of tasks in `tasks.md`.
+
+Do not assume generic architecture if the repository already defines one.
+
+Your new agents and rules MUST align with the repository's conventions.
+
+---
+
+# 2. Extend the OpenSpec Agent System
+
+Inside openspec/.agents/ create two new agent definitions: software-architect.md and qa-engineer.md.
+
+These agents must integrate cleanly with the existing ones. The repository should end up supporting a multi-agent development workflow: software-architect, backend-developer, frontend-developer, qa-engineer.
+
+---
+
+# 3. Software Architect Agent — # 4. QA Engineer Agent — # 5. Agent Tags — # 6. Cursor Rules (openspec-task-tagging.mdc) — # 7. Workflow Rule (openspec-agent-workflow.mdc) — # 8. Quality Requirements — # 9. Deliverables — # 10. Final Verification
+
+[Instrucciones detalladas de cada sección según especificación original: rol, responsabilidades, restricciones, formato de tareas, ejemplos, verificaciones.]
+```
+
+> **Resumen de objetivos alcanzados:** Se creó un plan detallado para extender el sistema de agentes OpenSpec. Se analizó la configuración actual (agentes backend/frontend existentes, reglas Cursor, estructura de tasks.md sin etiquetas). Se definieron los entregables: `software-architect.md`, `qa-engineer.md`, `openspec-task-tagging.mdc`, `openspec-agent-workflow.mdc`, con responsabilidades, restricciones y reglas de etiquetado `[architect]`, `[backend]`, `[frontend]`, `[qa]`.
+
+---
+
+**Prompt 2** *(Modo Agent):*
+
+```
+Plan: Extensión Multi-Agente OpenSpec
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+```
+
+> **Resumen de objetivos alcanzados:** Se implementó el plan completo: se crearon `openspec/.agents/software-architect.md` (rol de diseño y descomposición, sin implementación) y `openspec/.agents/qa-engineer.md` (validación y testing); se crearon `.cursor/rules/openspec-task-tagging.mdc` (etiquetas obligatorias en tasks.md) y `.cursor/rules/openspec-agent-workflow.mdc` (flujo multi-agente en 5 fases). Los cuatro agentes quedaron definidos y las reglas imponen etiquetado en toda tarea generada.
+
+---
+
+**Prompt 3** *(Modo Plan):*
+
+```
+Verifica que el nuevo workflow generado esté perfectamente sincronizado con el workflow típico de openspec donde primero se genera un artefacto proposal, después los design y spec necesarias, y finalmente el de task, necesario para aplicar los cambios a continuación, tal y como se expresa en @openspec/schemas
+```
+
+> **Resumen de objetivos alcanzados:** Se detectaron desincronizaciones críticas: (1) el artefacto `specs` estaba omitido — el schema exige `proposal → specs + design → tasks`; (2) `architecture.md` era un artefacto inventado, no definido en el schema; (3) el formato de tareas debía combinar prefijo numérico con etiqueta de agente. Se elaboró un plan de corrección para los tres archivos afectados.
+
+---
+
+**Prompt 4** *(Modo Agent):*
+
+```
+Plan: Sincronización del Workflow con el Schema de OpenSpec
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+```
+
+> **Resumen de objetivos alcanzados:** Se sincronizó el workflow con `openspec/schemas/my-workflow/schema.yaml`: `openspec-agent-workflow.mdc` reescrito con 6 fases (Petición → Proposal → Specs + Design → Tasks → Implementación → QA), eliminando `architecture.md` y añadiendo el artefacto `specs/**/*.md`; `software-architect.md` actualizado con flujo proposal → specs → design → tasks y reemplazo de `architecture.md` por `design.md`; `openspec-task-tagging.mdc` actualizado con formato `- [ ] N.M [etiqueta] Descripción` compatible con el template de OpenSpec.
+
+---
+
+### **8.4. Principios de Integración Memory-Bank + OpenSpec**
 
 **Lecciones aprendidas y mejores prácticas:**
 
@@ -1098,15 +1195,23 @@ En función del nuevo memory-bank creado:
 
 3. **Integración en el flujo de desarrollo**:
    - El `config.yaml` de OpenSpec carga automáticamente contexto del memory-bank
-   - Los agentes (backend/frontend) leen el memory-bank al inicio de cada tarea
+   - Los agentes (backend/frontend/architect/qa) leen el memory-bank al inicio de cada tarea
    - Los comandos incluyen recordatorios explícitos para consultar el memory-bank
 
-4. **Evolución orgánica**:
+4. **Workflow OpenSpec multi-agente (refinamiento 2026-03)**:
+   - **6 fases** alineadas con `openspec/schemas/my-workflow/schema.yaml`: Petición → Proposal → Specs + Design → Tasks → Implementación → QA
+   - **Cadena de dependencias**: `proposal` (sin prerequisitos) → `specs/**/*.md` y `design.md` (ambos requieren proposal) → `tasks.md` (requiere specs AND design) → `apply`
+   - **Artefacto `specs` obligatorio**: el schema exige delta specs en `specs/<capability>/spec.md` por cada capacidad listada en el proposal
+   - **No artefacto `architecture.md`**: el design técnico se documenta en `design.md` (artefacto trazable del schema)
+   - **Etiquetas de agente en tasks**: toda tarea usa el formato `- [ ] N.M [architect|backend|frontend|qa] Descripción`
+   - **Cuatro agentes**: `software-architect` (proposal, specs, design, tasks), `backend-developer`, `frontend-developer`, `qa-engineer`
+
+5. **Evolución orgánica**:
    - La estructura inicial es mínima pero extensible
    - Directorios `patterns/` y `sessions/` preparados para futuro crecimiento
    - Los ADRs documentan el "por qué" de decisiones técnicas para referencia futura
 
-5. **Optimización para sesiones cortas de IA**:
+6. **Optimización para sesiones cortas de IA**:
    - Documentos concisos (overview de 80 líneas vs Business.md de 2130)
    - Navegación rápida con índices y mapas
    - Referencias directas para profundización cuando es necesario
