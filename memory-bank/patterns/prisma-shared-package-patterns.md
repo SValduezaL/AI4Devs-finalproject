@@ -1,6 +1,6 @@
 # Patrones — Paquete Prisma Compartido en Monorepo
 
-> **Última actualización**: 2026-03-02  
+> **Última actualización**: 2026-03-09  
 > **Origen**: Change `infra-prisma-shared-schema` — Opción B (ADR-009)  
 > **Referencia**: [ADR-009](../architecture/009-prisma-db-package.md)
 
@@ -42,8 +42,15 @@ En un monorepo con API y Worker que comparten PostgreSQL, el schema Prisma debe 
 > **`db:seed` en el root ejecuta el seed directamente, no vía `prisma db seed`.**
 
 - **Problema**: `prisma db seed` lanza un subproceso donde `@adresles/prisma-db` no se resuelve bien en el contexto del workspace.
-- **Solución**: `node -r dotenv/config -r ts-node/register packages/prisma-db/seed.ts dotenv_config_path=apps/api/.env`
+- **Solución**: `node -r dotenv/config -r ts-node/register packages/prisma-db/seed.ts dotenv_config_path=.env` — las variables se cargan desde el **`.env` de la raíz** del monorepo.
 - **Import en seed**: Usar `import { PrismaClient } from './generated'` (relativo) en lugar de `@adresles/prisma-db` para evitar problemas de resolución dentro del package.
+
+### 5. Prisma (migrate, studio, generate) y variables de entorno
+
+> **La fuente de variables para Prisma es el `.env` de la raíz del monorepo.**
+
+- Los comandos `db:migrate`, `db:studio` y `prisma generate` se ejecutan con `pnpm --filter api exec prisma ...` (CWD = `apps/api`).
+- El archivo `apps/api/prisma.config.ts` carga explícitamente el `.env` de la raíz (`../../.env`) antes de exponer `DATABASE_URL` a Prisma, de modo que migrate y studio usen la misma configuración que el resto del monorepo.
 
 ---
 
@@ -54,7 +61,7 @@ En un monorepo con API y Worker que comparten PostgreSQL, el schema Prisma debe 
 | `db:generate` | `pnpm --filter @adresles/prisma-db run generate` |
 | `db:migrate` | `pnpm --filter api exec prisma migrate dev` |
 | `db:migrate:deploy` | `pnpm --filter api exec prisma migrate deploy` |
-| `db:seed` | `node -r dotenv/config -r ts-node/register packages/prisma-db/seed.ts dotenv_config_path=apps/api/.env` |
+| `db:seed` | `node -r dotenv/config -r ts-node/register packages/prisma-db/seed.ts dotenv_config_path=.env` |
 | `db:studio` | `pnpm --filter api exec prisma studio` |
 
 ---

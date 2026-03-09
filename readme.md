@@ -224,37 +224,24 @@ adresles/
 
 #### **Variables de Entorno (`.env`)**
 
-**API (`apps/api/.env`)**:
+En desarrollo local hay **un único `.env` en la raíz** del monorepo. API, Worker, Prisma y web-admin lo usan como fuente de verdad.
+
+1. Copiar la plantilla: `cp .env.example .env`
+2. Editar `.env` en la raíz y rellenar los valores (DB, Redis, AWS, OpenAI, Google Maps, `NEXT_PUBLIC_API_URL`).
+
+Ejemplo de variables (ver `.env.example` para la lista completa):
 
 ```bash
-NODE_ENV=development
-PORT=3000
-DATABASE_URL=postgresql://postgres:password@localhost:5432/adresles
-REDIS_URL=redis://localhost:6379
-DYNAMODB_ENDPOINT=http://localhost:8000
-AWS_REGION=eu-west-1
-AWS_ACCESS_KEY_ID=xxx
-AWS_SECRET_ACCESS_KEY=xxx
-OPENAI_API_KEY=sk-xxx
-GOOGLE_MAPS_API_KEY=xxx
-```
-
-**Worker (`apps/worker/.env`)**:
-
-```bash
-REDIS_URL=redis://localhost:6379
-DYNAMODB_ENDPOINT=http://localhost:8000
-AWS_REGION=eu-west-1
-AWS_ACCESS_KEY_ID=xxx
-AWS_SECRET_ACCESS_KEY=xxx
-OPENAI_API_KEY=sk-xxx
-GOOGLE_MAPS_API_KEY=xxx
-```
-
-**Web Admin (`apps/web-admin/.env.local`)**:
-
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:3000
+# Database (Prisma, API, Worker)
+DATABASE_URL="postgresql://..."
+REDIS_URL="redis://localhost:6379"
+# AWS / DynamoDB
+DYNAMODB_ENDPOINT="http://localhost:8000"
+# Worker
+OPENAI_API_KEY="sk-xxx"
+GOOGLE_MAPS_API_KEY="xxx"
+# Web Admin
+NEXT_PUBLIC_API_URL="http://localhost:3000"
 ```
 
 #### **Instalación**
@@ -268,7 +255,7 @@ cd AI4Devs-finalproject
 pnpm install
 
 # 3. Configurar variables de entorno
-# Copiar y editar apps/api/.env y apps/worker/.env (ver sección anterior)
+# Copiar .env.example a .env en la raíz y rellenar (ver sección anterior)
 
 # 4. Iniciar servicios con Docker Compose (PostgreSQL, Redis, DynamoDB Local)
 docker compose -f infrastructure/docker/docker-compose.yml up -d

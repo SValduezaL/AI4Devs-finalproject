@@ -1,5 +1,14 @@
+import * as path from 'path';
+import * as fs from 'fs';
 import * as dotenv from 'dotenv';
-dotenv.config({ override: true });
+
+const rootEnvPath = path.resolve(process.cwd(), '../../.env');
+if (fs.existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath, override: true });
+} else {
+  dotenv.config({ override: true });
+}
+
 import { Worker } from 'bullmq';
 import { conversationProcessor, processResponseProcessor, setLLMService } from './processors/conversation.processor';
 import { OpenAILLMService } from './llm/openai-llm.service';

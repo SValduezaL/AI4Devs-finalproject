@@ -9,10 +9,10 @@
     "test": "turbo run test",
     "db:generate": "pnpm --filter @adresles/prisma-db run generate",
     "db:migrate": "pnpm --filter api exec prisma migrate dev",
-    "db:seed": "node -r dotenv/config -r ts-node/register packages/prisma-db/seed.ts dotenv_config_path=apps/api/.env",
+    "db:seed": "node -r dotenv/config -r ts-node/register packages/prisma-db/seed.ts dotenv_config_path=.env",
     "db:studio": "pnpm --filter api exec prisma studio",
     "db:migrate:deploy": "pnpm --filter api exec prisma migrate deploy",
-    "dynamo:setup": "ts-node --require dotenv/config infrastructure/scripts/setup-dynamodb.ts dotenv_config_path=apps/api/.env"
+    "dynamo:setup": "ts-node --require dotenv/config infrastructure/scripts/setup-dynamodb.ts dotenv_config_path=.env"
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.995.0",
