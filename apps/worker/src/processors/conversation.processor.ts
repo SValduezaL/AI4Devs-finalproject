@@ -97,7 +97,7 @@ export async function conversationProcessor(job: Job<ProcessConversationJobData>
   const { conversationId, orderId, userId, conversationType, context } = job.data;
 
   const user = await prisma.user.findUnique({ where: { id: userId }, include: { phone: true } });
-  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { store: true } });
+  const order = await prisma.order.findUnique({ where: { id: orderId }, include: { store: true, orderAddress: true } });
 
   if (!user || !order) throw new Error(`User ${userId} or Order ${orderId} not found`);
 
@@ -271,13 +271,23 @@ async function processGetAddressJourney(
 async function processInformationJourney(
   conversationId: string,
   user: { firstName: string | null; lastName: string | null },
-  order: { externalOrderNumber: string | null; store: { name: string } },
+  order: {
+    externalOrderId: string;
+    store: { name: string };
+    orderAddress: { fullAddress: string } | null;
+  },
 ) {
-  const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Usuario';
-  const message =
-    `¡Hola ${name}! ✅ Tu pedido #${order.externalOrderNumber ?? 'N/A'} de ${order.store.name} ha sido confirmado. ` +
-    `La dirección de entrega que indicaste ha sido registrada correctamente. ` +
-    `Tu pedido será enviado pronto. ¡Gracias por tu compra!`;
+  const name = user.firstName ?? 'Cliente';
+  const orderNumber = order.externalOrderId;
+  const addressLine =
+    order.orderAddress != null
+      ? `La dirección de entrega es: ${order.orderAddress.fullAddress}.`
+      : 'La dirección de entrega que indicaste ha sido registrada correctamente.';
+  const message = [
+    `¡Hola ${name}! ✅ Tu pedido #${orderNumber} de ${order.store.name} ha sido confirmado.`,
+    addressLine,
+    'Tu pedido será enviado pronto. ¡Gracias por tu compra!',
+  ].join('\n\n');
 
   await saveMessage(conversationId, 'assistant', message);
   await publishConversationUpdate(conversationId, 'assistant', message);

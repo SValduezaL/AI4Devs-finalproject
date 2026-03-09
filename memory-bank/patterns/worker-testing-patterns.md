@@ -1,7 +1,7 @@
 # Patrones de Testing — Worker (BullMQ)
 
-> **Última actualización**: 2026-03-08  
-> **Origen**: CU03-B3 Worker Registration + fix "open handles"; CU03-B4 libreta (interpretUserIntent mock, mockClear); llm-service-abstraction (ILLMService injection pattern)
+> **Última actualización**: 2026-03-09  
+> **Origen**: CU03-B3 Worker Registration + fix "open handles"; CU03-B4 libreta (interpretUserIntent mock, mockClear); llm-service-abstraction (ILLMService injection); fix-information-journey-confirmation-message (mock Order con store y orderAddress para INFORMATION).
 
 ---
 
@@ -59,6 +59,10 @@ jest.mock('../dynamodb/dynamodb.service', () => ({
 ### Regla de aplicación
 
 > Si un spec importa un módulo que a su vez importa Prisma, Redis o DynamoDB, mockear esos módulos al inicio del spec para evitar conexiones persistentes.
+
+### Mock de Order con `store` y `orderAddress` (journey INFORMATION)
+
+En `conversationProcessor` la Order se carga con `include: { store: true, orderAddress: true }`. Para tests que ejercitan el journey INFORMATION (`conversationType === 'INFORMATION'`), el mock de `order.findUnique` debe devolver un objeto que incluya `store` y `orderAddress` (o `orderAddress: null` para el caso sin dirección). Ejemplo: `{ externalOrderId: 'EXT-123', store: { name: 'Tienda' }, orderAddress: { fullAddress: 'Calle X 1, 28001 Madrid' } }`. Así se verifica tanto el contenido del mensaje (saludo, número de pedido, dirección) como que la query usa el include correcto.
 
 ### Alternativa: redis-publisher.spec.ts
 

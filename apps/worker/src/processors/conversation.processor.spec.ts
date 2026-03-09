@@ -76,6 +76,132 @@ describe('conversation.processor', () => {
   });
 });
 
+describe('conversationProcessor INFORMATION journey', () => {
+  const jobData = {
+    conversationId: 'conv-info-1',
+    orderId: 'order-info-1',
+    userId: 'user-info-1',
+    conversationType: 'INFORMATION' as const,
+    context: undefined,
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const { PrismaClient } = await import('@adresles/prisma-db');
+    const instance = new (PrismaClient as jest.Mock)();
+    (instance.user.findUnique as jest.Mock).mockResolvedValue({
+      id: 'user-info-1',
+      firstName: 'Carmen',
+      lastName: 'Martínez',
+      preferredLanguage: 'es',
+      isRegistered: false,
+      phone: { id: 'phone-1' },
+    });
+    (instance.order.findUnique as jest.Mock).mockResolvedValue({
+      externalOrderId: 'EXT-12345',
+      externalOrderNumber: null,
+      store: { name: 'ModaMujer Outlet' },
+      orderAddress: { fullAddress: 'Calle Mayor 1, 3º A, 28001 Madrid' },
+    });
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    (dynamo.saveMessage as jest.Mock).mockResolvedValue(undefined);
+    (dynamo.saveConversationState as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  it('sends first message with first name only in greeting (no last name)', async () => {
+    const { conversationProcessor } = await import('./conversation.processor');
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+    expect(dynamo.saveMessage).toHaveBeenCalledWith(
+      'conv-info-1',
+      'assistant',
+      expect.stringContaining('¡Hola Carmen!'),
+    );
+    const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
+      (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
+    )?.[2];
+    expect(message).not.toMatch(/Hola Carmen Martínez/);
+  });
+
+  it('sends first message with "Cliente" when firstName is null', async () => {
+    const { PrismaClient } = await import('@adresles/prisma-db');
+    const instance = new (PrismaClient as jest.Mock)();
+    (instance.user.findUnique as jest.Mock).mockResolvedValue({
+      id: 'user-info-1',
+      firstName: null,
+      lastName: 'Martínez',
+      preferredLanguage: 'es',
+      isRegistered: false,
+      phone: { id: 'phone-1' },
+    });
+    const { conversationProcessor } = await import('./conversation.processor');
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+    const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
+      (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
+    )?.[2];
+    expect(message).toMatch(/¡Hola Cliente!/);
+  });
+
+  it('sends first message with order number from externalOrderId (not N/A)', async () => {
+    const { conversationProcessor } = await import('./conversation.processor');
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+    const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
+      (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
+    )?.[2];
+    expect(message).toContain('#EXT-12345');
+    expect(message).not.toContain('#N/A');
+  });
+
+  it('sends first message with delivery address when order has orderAddress', async () => {
+    const { conversationProcessor } = await import('./conversation.processor');
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+    const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
+      (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
+    )?.[2];
+    expect(message).toContain('La dirección de entrega es: Calle Mayor 1, 3º A, 28001 Madrid.');
+  });
+
+  it('sends first message with neutral address text when order has no orderAddress', async () => {
+    const { PrismaClient } = await import('@adresles/prisma-db');
+    const instance = new (PrismaClient as jest.Mock)();
+    (instance.order.findUnique as jest.Mock).mockResolvedValue({
+      externalOrderId: 'EXT-999',
+      externalOrderNumber: null,
+      store: { name: 'Tienda Y' },
+      orderAddress: null,
+    });
+    const { conversationProcessor } = await import('./conversation.processor');
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+    const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
+      (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
+    )?.[2];
+    expect(message).toContain('La dirección de entrega que indicaste ha sido registrada correctamente.');
+  });
+
+  it('loads order with include store and orderAddress', async () => {
+    const { PrismaClient } = await import('@adresles/prisma-db');
+    const instance = new (PrismaClient as jest.Mock)();
+    const { conversationProcessor } = await import('./conversation.processor');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+    expect(instance.order.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'order-info-1' },
+        include: { store: true, orderAddress: true },
+      }),
+    );
+  });
+});
+
 describe('processResponseProcessor WAITING_SAVE_ADDRESS and WAITING_SAVE_ADDRESS_LABEL', () => {
   const jobData = {
     conversationId: 'conv-1',
@@ -93,7 +219,12 @@ describe('processResponseProcessor WAITING_SAVE_ADDRESS and WAITING_SAVE_ADDRESS
     phone: { id: 'phone-1' },
   };
 
-  const baseOrder = { externalOrderNumber: 'EXT-1', store: { name: 'StoreX' } };
+  const baseOrder = {
+    externalOrderId: 'EXT-1',
+    externalOrderNumber: 'EXT-1',
+    store: { name: 'StoreX' },
+    orderAddress: null as { fullAddress: string } | null,
+  };
   const confirmedPending = {
     gmapsFormatted: 'Calle Nueva 5, 28002 Madrid',
     gmapsPlaceId: null,
@@ -280,7 +411,12 @@ describe('processResponseProcessor offerSaveAddress — dirección ya en libreta
     phone: { id: 'phone-1' },
   };
 
-  const baseOrder = { externalOrderNumber: 'EXT-1', store: { name: 'StoreX' } };
+  const baseOrder = {
+    externalOrderId: 'EXT-1',
+    externalOrderNumber: 'EXT-1',
+    store: { name: 'StoreX' },
+    orderAddress: null as { fullAddress: string } | null,
+  };
   const confirmedPending = {
     gmapsFormatted: 'Calle Nueva 5, 28002 Madrid',
     gmapsPlaceId: null,
