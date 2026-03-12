@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { IsIn, IsOptional, IsString, Matches } from 'class-validator';
-import { AdminService } from './admin.service';
+import { AdminService, GetAddressesParams } from './admin.service';
 
 class PaginationQuery {
   @IsOptional()
@@ -28,6 +28,24 @@ class UsersQuery extends PaginationQuery {
   @IsOptional()
   @IsIn(['true', 'false'])
   registered?: string;
+}
+
+class AddressesQuery extends PaginationQuery {
+  @IsOptional()
+  @IsIn(['name', 'alias', 'postalCode', 'city', 'province', 'country', 'favorite'])
+  sortBy?: string;
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortDir?: string;
+
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  favorite?: string;
 }
 
 class OrdersQuery extends PaginationQuery {
@@ -89,6 +107,19 @@ export class AdminController {
       q: query.q,
       registered: query.registered,
     });
+  }
+
+  @Get('addresses')
+  getAddresses(@Query() query: AddressesQuery) {
+    const page = Math.max(1, parseInt(query.page ?? '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(query.limit ?? '50', 10) || 50));
+    const params: GetAddressesParams = {
+      sortBy: query.sortBy,
+      sortDir: query.sortDir,
+      q: query.q,
+      favorite: query.favorite,
+    };
+    return this.adminService.getAddresses(page, limit, params);
   }
 
   @Get('stores')

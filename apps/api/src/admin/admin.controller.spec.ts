@@ -7,6 +7,7 @@ import { AdminService } from './admin.service';
 const mockAdminService = {
   getOrders: jest.fn(),
   getUsers: jest.fn(),
+  getAddresses: jest.fn(),
   getConversationMessages: jest.fn(),
   getStores: jest.fn(),
 };
@@ -191,6 +192,83 @@ describe('AdminController (integration HTTP)', () => {
       expect(mockAdminService.getUsers).toHaveBeenCalledWith(1, 50, {
         ...defaultUserParams,
         registered: 'true',
+      });
+    });
+  });
+
+  describe('GET /admin/addresses', () => {
+    const defaultAddressParams = {
+      sortBy: undefined,
+      sortDir: undefined,
+      q: undefined,
+      favorite: undefined,
+    };
+
+    it('responde 200 con datos paginados por defecto', async () => {
+      const payload = {
+        data: [{ id: 'a1', label: 'Casa', user: { id: 'u1', firstName: 'Juan', lastName: 'García' } }],
+        meta: { page: 1, limit: 50, total: 1 },
+      };
+      mockAdminService.getAddresses.mockResolvedValue(payload);
+
+      const res = await request(app.getHttpServer())
+        .get('/admin/addresses')
+        .expect(200);
+
+      expect(res.body).toEqual(payload);
+      expect(mockAdminService.getAddresses).toHaveBeenCalledWith(1, 50, defaultAddressParams);
+    });
+
+    it('pasa sortBy=city y sortDir=asc al servicio', async () => {
+      mockAdminService.getAddresses.mockResolvedValue({ data: [], meta: {} });
+
+      await request(app.getHttpServer())
+        .get('/admin/addresses?sortBy=city&sortDir=asc')
+        .expect(200);
+
+      expect(mockAdminService.getAddresses).toHaveBeenCalledWith(1, 50, {
+        ...defaultAddressParams,
+        sortBy: 'city',
+        sortDir: 'asc',
+      });
+    });
+
+    it('pasa q=garcia al servicio', async () => {
+      mockAdminService.getAddresses.mockResolvedValue({ data: [], meta: {} });
+
+      await request(app.getHttpServer())
+        .get('/admin/addresses?q=garcia')
+        .expect(200);
+
+      expect(mockAdminService.getAddresses).toHaveBeenCalledWith(1, 50, {
+        ...defaultAddressParams,
+        q: 'garcia',
+      });
+    });
+
+    it('pasa favorite=true al servicio', async () => {
+      mockAdminService.getAddresses.mockResolvedValue({ data: [], meta: {} });
+
+      await request(app.getHttpServer())
+        .get('/admin/addresses?favorite=true')
+        .expect(200);
+
+      expect(mockAdminService.getAddresses).toHaveBeenCalledWith(1, 50, {
+        ...defaultAddressParams,
+        favorite: 'true',
+      });
+    });
+
+    it('pasa favorite=false al servicio', async () => {
+      mockAdminService.getAddresses.mockResolvedValue({ data: [], meta: {} });
+
+      await request(app.getHttpServer())
+        .get('/admin/addresses?favorite=false')
+        .expect(200);
+
+      expect(mockAdminService.getAddresses).toHaveBeenCalledWith(1, 50, {
+        ...defaultAddressParams,
+        favorite: 'false',
       });
     });
   });

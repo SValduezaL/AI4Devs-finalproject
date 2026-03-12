@@ -1,8 +1,8 @@
 # Memory Bank - Adresles
 
 > **Contexto persistente del proyecto para sesiones de IA**  
-> **Última actualización**: 2026-03-09  
-> ✅ **Change completado**: fix-information-journey-confirmation-message — primer mensaje del journey INFORMATION (saludo por nombre, externalOrderId, dirección desde OrderAddress, saltos de línea); 14 tests pasando
+> **Última actualización**: 2026-03-12  
+> ✅ **Change completado**: admin-addresses-page — nueva página `/addresses` en el Dashboard Admin (tabla paginada, sort en 7 columnas, búsqueda OR en 13 campos, filtro Favorita, `formatAddress` con separador diferenciado); 96 tests pasando
 
 ## 📖 Inicio Rápido
 
@@ -37,6 +37,8 @@ Decisiones clave que guían el desarrollo del proyecto:
 | [frontend-form-patterns.md](./patterns/frontend-form-patterns.md) | Formulario-modal con `useState` local, `canSubmit` derivado, mapeo `line1`/`line2` → `street`/`full_address`, combobox con estado derivado, `safeTimeLabel`, `key` prop reset | 2026-03-01 |
 | [prisma-shared-package-patterns.md](./patterns/prisma-shared-package-patterns.md) | Schema+migraciones+seed en `packages/prisma-db`, `dependencies` vs devDependencies, `db:seed` desde root, shadow DB y checksum | 2026-03-02 |
 | [worker-testing-patterns.md](./patterns/worker-testing-patterns.md) | Mock Prisma/Redis/DynamoDB; inyección ILLMService con setLLMService(); mock de Order con store y orderAddress para INFORMATION | 2026-03-09 |
+
+| [admin-table-page-patterns.md](./patterns/admin-table-page-patterns.md) | Patrón completo de página tabla paginada en Admin Dashboard: Server Component + Client, sort/filtros en URL, `buildUrl`, debounce, `Suspense`, `buildWhere`/`buildOrderBy` en NestJS | 2026-03-12 |
 
 Pendiente de documentar:
 - Límites de agregados DDD
@@ -90,6 +92,7 @@ Pendiente de documentar:
 | [2026-03-02](./sessions/2026-03-02-cu03-b4-worker-address-book.md) | CU03-B4 — Worker: Libreta de direcciones — Completado | ✅ Completado (25/25 tareas, verif. + 2 tests) |
 | [2026-03-08](./sessions/2026-03-08-llm-service-abstraction.md) | llm-service-abstraction — Abstracción ILLMService, desacoplamiento OpenAI SDK — Completado | ✅ Completado (15/15 tareas, 41 tests) |
 | [2026-03-09](./sessions/2026-03-09-fix-information-journey-confirmation-message.md) | fix-information-journey-confirmation-message — Primer mensaje INFORMATION (compra tradicional) — Completado | ✅ Completado (10/10 tareas, 14 tests) |
+| [2026-03-12](./sessions/2026-03-12-admin-addresses-page.md) | admin-addresses-page — Página `/addresses` en Dashboard Admin (tabla, sort, búsqueda, filtro Favorita) — Completado | ✅ Completado (29/29 tareas, 96 tests) |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
@@ -137,7 +140,8 @@ memory-bank/
 │   ├── real-time-sse-patterns.md    # SSE, Redis Pub/Sub, RxJS
 │   ├── frontend-form-patterns.md   # Formularios modal, dirección eCommerce, combobox
 │   ├── prisma-shared-package-patterns.md  # Schema+migraciones+seed en packages/prisma-db
-│   └── worker-testing-patterns.md   # Mock Prisma/Redis/DynamoDB para specs del Worker
+│   ├── worker-testing-patterns.md   # Mock Prisma/Redis/DynamoDB para specs del Worker
+│   └── admin-table-page-patterns.md  # Patrón tabla paginada Admin: Server Component + sort/filtros en URL
 │
 ├── sessions/                   # Aprendizajes de sesiones pasadas
 │   └── (se documenta conforme avanza el proyecto)
@@ -171,7 +175,7 @@ Este memory-bank permite a la IA:
 
 ---
 
-**Última revisión**: 2026-03-09  
+**Última revisión**: 2026-03-12  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: fix-information-journey-confirmation-message completado — primer mensaje del journey INFORMATION con saludo por nombre, externalOrderId, dirección desde OrderAddress y saltos de línea; worker-testing-patterns ampliado (mock Order con store/orderAddress); sesión 2026-03-09 registrada.  
+**Cambios recientes**: admin-addresses-page completado — nueva página `/addresses` en el Dashboard Admin con tabla paginada, sort en 7 columnas, búsqueda OR en 13 campos y filtro Favorita; `formatAddress()` con separador diferenciado (espacio entre calle/número, coma para el resto); patrón `admin-table-page-patterns` documentado (aplicado en 3 páginas: orders, users, addresses); sesión 2026-03-12 registrada.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo

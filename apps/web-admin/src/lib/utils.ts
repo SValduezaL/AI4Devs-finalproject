@@ -42,6 +42,24 @@ export function formatFullName(
   return [firstName, lastName].filter(Boolean).join(' ') || '—';
 }
 
+export function formatAddress(address: {
+  street: string;
+  number?: string | null;
+  block?: string | null;
+  staircase?: string | null;
+  floor?: string | null;
+  door?: string | null;
+}): string {
+  const streetPart = [address.street, address.number]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join(' ');
+
+  const rest = [address.block, address.staircase, address.floor, address.door]
+    .filter((part): part is string => Boolean(part?.trim()));
+
+  return [streetPart, ...rest].join(', ');
+}
+
 export function isExpiringSoon(
   expiresAtUnix: number,
   daysThreshold = 7,

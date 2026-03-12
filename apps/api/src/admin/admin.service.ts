@@ -20,6 +20,13 @@ export interface GetUsersParams {
   registered?: string;
 }
 
+export interface GetAddressesParams {
+  sortBy?: string;
+  sortDir?: string;
+  q?: string;
+  favorite?: string;
+}
+
 export interface SimulateStore {
   id: string;
   name: string;
@@ -48,6 +55,10 @@ export class AdminService {
   private readonly validSortColumns = ['ref', 'store', 'user', 'amount', 'date'];
 
   private readonly validUserSortColumns = ['name', 'email', 'orders', 'addresses', 'lastInteraction'];
+
+  private readonly validAddressSortColumns = [
+    'name', 'alias', 'postalCode', 'city', 'province', 'country', 'favorite',
+  ];
 
   async getOrders(
     page: number,
@@ -217,6 +228,97 @@ export class AdminService {
       conditions.push({ isRegistered: true });
     } else if (params.registered === 'false') {
       conditions.push({ isRegistered: false });
+    }
+
+    return { AND: conditions };
+  }
+
+  async getAddresses(page: number, limit: number, params: GetAddressesParams = {}) {
+    const skip = (page - 1) * limit;
+    const isValidSort =
+      params.sortBy !== undefined &&
+      this.validAddressSortColumns.includes(params.sortBy);
+    const resolvedSort = isValidSort ? params.sortBy! : 'name';
+    const dir: 'asc' | 'desc' =
+      isValidSort ? (params.sortDir === 'asc' ? 'asc' : 'desc') : 'asc';
+    const orderBy = this.buildAddressesOrderBy(resolvedSort, dir);
+    const where = this.buildAddressesWhere(params);
+
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.address.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      this.prisma.address.count({ where }),
+    ]);
+
+    return { data, meta: { page, limit, total } };
+  }
+
+  private buildAddressesOrderBy(sortBy: string, dir: 'asc' | 'desc') {
+    const nullsLast = { sort: dir, nulls: 'last' as const };
+
+    switch (sortBy) {
+      case 'name':
+        return [
+          { user: { firstName: nullsLast } },
+          { user: { lastName: nullsLast } },
+        ];
+      case 'alias':
+        return [{ label: nullsLast }];
+      case 'postalCode':
+        return [{ postalCode: dir }];
+      case 'city':
+        return [{ city: dir }];
+      case 'province':
+        return [{ province: nullsLast }];
+      case 'country':
+        return [{ country: dir }];
+      case 'favorite':
+        return [{ isDefault: dir }];
+      default:
+        return [
+          { user: { firstName: nullsLast } },
+          { user: { lastName: nullsLast } },
+        ];
+    }
+  }
+
+  private buildAddressesWhere(params: GetAddressesParams): Prisma.AddressWhereInput {
+    const conditions: Prisma.AddressWhereInput[] = [{ isDeleted: false }];
+
+    if (params.q && params.q.trim()) {
+      const q = params.q.trim();
+      conditions.push({
+        OR: [
+          { user: { firstName: { contains: q, mode: 'insensitive' } } },
+          { user: { lastName: { contains: q, mode: 'insensitive' } } },
+          { label: { contains: q, mode: 'insensitive' } },
+          { street: { contains: q, mode: 'insensitive' } },
+          { number: { contains: q, mode: 'insensitive' } },
+          { block: { contains: q, mode: 'insensitive' } },
+          { staircase: { contains: q, mode: 'insensitive' } },
+          { floor: { contains: q, mode: 'insensitive' } },
+          { door: { contains: q, mode: 'insensitive' } },
+          { postalCode: { contains: q, mode: 'insensitive' } },
+          { city: { contains: q, mode: 'insensitive' } },
+          { province: { contains: q, mode: 'insensitive' } },
+          { country: { contains: q, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (params.favorite === 'true') {
+      conditions.push({ isDefault: true });
+    } else if (params.favorite === 'false') {
+      conditions.push({ isDefault: false });
     }
 
     return { AND: conditions };

@@ -112,8 +112,57 @@ export interface ConversationMessagesResponse {
   messages: ConversationMessage[];
 }
 
+export interface AdminAddressUser {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+export interface AdminAddress {
+  id: string;
+  label: string | null;
+  street: string;
+  number: string | null;
+  block: string | null;
+  staircase: string | null;
+  floor: string | null;
+  door: string | null;
+  postalCode: string;
+  city: string;
+  province: string | null;
+  country: string;
+  isDefault: boolean;
+  user: AdminAddressUser;
+}
+
 export type OrdersResponse = PaginatedResponse<AdminOrder>;
 export type UsersResponse  = PaginatedResponse<AdminUser>;
+export type AddressesResponse = PaginatedResponse<AdminAddress>;
+
+export type AddressSortByColumn =
+  | 'name'
+  | 'alias'
+  | 'postalCode'
+  | 'city'
+  | 'province'
+  | 'country'
+  | 'favorite';
+
+export const VALID_ADDRESS_SORT_COLUMNS: AddressSortByColumn[] = [
+  'name', 'alias', 'postalCode', 'city', 'province', 'country', 'favorite',
+];
+export const DEFAULT_ADDRESS_SORT: AddressSortByColumn = 'name';
+export const DEFAULT_ADDRESS_DIR: SortDir = 'asc';
+
+export interface AddressesFilters {
+  q?: string;
+  favorite?: 'true' | 'false';
+}
+
+export const ADDRESS_FAVORITE_FILTER_LABELS: Record<string, string> = {
+  true: 'Favorita',
+  false: 'No favorita',
+};
 
 export type SortByColumn = 'ref' | 'store' | 'user' | 'amount' | 'date';
 export type SortDir = 'asc' | 'desc';

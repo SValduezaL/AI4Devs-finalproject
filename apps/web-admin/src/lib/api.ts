@@ -1,6 +1,7 @@
 import type {
   OrdersResponse,
   UsersResponse,
+  AddressesResponse,
   ConversationMessage,
   ConversationMessagesResponse,
   SortByColumn,
@@ -8,6 +9,8 @@ import type {
   OrdersFilters,
   UserSortByColumn,
   UsersFilters,
+  AddressSortByColumn,
+  AddressesFilters,
   StoresResponse,
   CreateMockOrderPayload,
   StartSimulationResult,
@@ -55,6 +58,21 @@ export const getUsers = (
   if (filters?.q) params.set('q', filters.q);
   if (filters?.registered) params.set('registered', filters.registered);
   return apiFetch(`/api/admin/users?${params.toString()}`);
+};
+
+export const getAddresses = (
+  page = 1,
+  limit = 50,
+  sortBy?: AddressSortByColumn,
+  sortDir?: SortDir,
+  filters?: AddressesFilters,
+): Promise<AddressesResponse> => {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (sortBy) params.set('sortBy', sortBy);
+  if (sortDir) params.set('sortDir', sortDir);
+  if (filters?.q) params.set('q', filters.q);
+  if (filters?.favorite) params.set('favorite', filters.favorite);
+  return apiFetch(`/api/admin/addresses?${params.toString()}`);
 };
 
 export const getConversationMessages = (

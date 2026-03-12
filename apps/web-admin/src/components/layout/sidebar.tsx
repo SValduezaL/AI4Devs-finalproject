@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingCart, Users, MessageSquare } from 'lucide-react';
+import { ShoppingCart, Users, MapPin, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/orders', label: 'Pedidos', icon: ShoppingCart },
   { href: '/users', label: 'Usuarios', icon: Users },
+  { href: '/addresses', label: 'Direcciones', icon: MapPin },
   { href: '/simulate', label: 'Simulación', icon: MessageSquare },
 ];
 
