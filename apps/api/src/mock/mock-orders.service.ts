@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { StoresService } from '../stores/stores.service';
 import { UsersService } from '../users/users.service';
 import { OrdersService } from '../orders/orders.service';
+import { ExternalOrderIdService } from '../orders/external-order-id.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { EcommerceSyncService } from '../ecommerce-sync/ecommerce-sync.service';
 import { CreateMockOrderDto } from './dto/create-mock-order.dto';
@@ -18,6 +19,7 @@ export class MockOrdersService {
     private readonly stores: StoresService,
     private readonly users: UsersService,
     private readonly orders: OrdersService,
+    private readonly externalOrderId: ExternalOrderIdService,
     private readonly conversations: ConversationsService,
     private readonly ecommerceSync: EcommerceSyncService,
   ) {}
@@ -28,6 +30,11 @@ export class MockOrdersService {
     }
 
     const { id: storeId } = await this.stores.findOrCreateStore(dto.store);
+
+    if (!dto.external_order_id) {
+      dto.external_order_id = await this.externalOrderId.generate(storeId);
+    }
+
     const { id: userId, phoneId } = await this.users.findOrCreateByPhone(dto.buyer);
 
     if (dto.mode === 'tradicional' && dto.address) {

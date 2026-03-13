@@ -32,7 +32,7 @@ export class OrdersService {
       data: {
         storeId,
         userId,
-        externalOrderId: dto.external_order_id,
+        externalOrderId: dto.external_order_id!,
         externalOrderNumber: dto.external_order_number,
         totalAmount: dto.total_amount,
         currency: dto.currency,

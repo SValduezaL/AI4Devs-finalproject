@@ -80,7 +80,7 @@ export function OrdersTable({ orders, sortBy, sortDir }: OrdersTableProps) {
       </TableHeader>
       <TableBody>
         {orders.map((order) => {
-          const orderNumber = order.externalOrderNumber ?? order.externalOrderId;
+          const orderNumber = order.externalOrderId;
           const conversationId = order.conversations[0]?.id;
 
           return (

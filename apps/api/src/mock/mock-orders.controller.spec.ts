@@ -11,7 +11,6 @@ const mockMockOrdersService = {
 const adreslesPayload = {
   store: { name: 'Tienda Prueba', url: 'https://tienda.example.com' },
   external_order_id: 'ext-001',
-  external_order_number: 'ORD-001',
   buyer: {
     first_name: 'María',
     last_name: 'López',
@@ -199,6 +198,22 @@ describe('MockOrdersController (integration)', () => {
       await request(app.getHttpServer())
         .post('/mock/orders')
         .send(minimalPayload)
+        .expect(201);
+
+      expect(mockMockOrdersService.processMockOrder).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns 201 sin external_order_id — el campo es opcional', async () => {
+      mockMockOrdersService.processMockOrder.mockResolvedValue({
+        order_id: 'order-uuid-gen',
+        conversation_id: 'conv-uuid-gen',
+      });
+
+      const { external_order_id: _id, ...payloadSinId } = adreslesPayload;
+
+      await request(app.getHttpServer())
+        .post('/mock/orders')
+        .send(payloadSinId)
         .expect(201);
 
       expect(mockMockOrdersService.processMockOrder).toHaveBeenCalledTimes(1);

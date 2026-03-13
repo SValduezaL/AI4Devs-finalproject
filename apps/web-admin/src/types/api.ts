@@ -98,7 +98,7 @@ export interface ConversationContext {
   status: ConversationStatus;
   startedAt: string;
   completedAt: string | null;
-  order: { externalOrderNumber: string | null };
+  order: { externalOrderId: string };
 }
 
 export interface PaginatedResponse<T> {
@@ -233,7 +233,7 @@ export interface StoresResponse {
 
 export interface CreateMockOrderPayload {
   store: { name: string; url: string };
-  external_order_id: string;
+  external_order_id?: string;
   buyer: { first_name: string; last_name: string; phone: string; email?: string };
   mode: 'adresles' | 'tradicional';
   address?: {

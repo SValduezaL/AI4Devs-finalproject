@@ -22,7 +22,7 @@ export function ChatView({ data }: ChatViewProps) {
   }, []);
 
   const firstMessageExpiry = messages[0]?.expiresAt;
-  const orderNumber = conversation.order.externalOrderNumber;
+  const orderNumber = conversation.order.externalOrderId;
 
   return (
     <div className="flex h-full flex-col">

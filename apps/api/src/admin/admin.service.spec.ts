@@ -112,34 +112,34 @@ describe('AdminService', () => {
       );
     });
 
-    it('sortBy=ref → ordena por externalOrderNumber con nulls last', async () => {
+    it('sortBy=ref → ordena por externalOrderId (NOT NULL, sin nulls)', async () => {
       await service.getOrders(1, 50, { sortBy: 'ref', sortDir: 'asc' });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: [{ externalOrderNumber: { sort: 'asc', nulls: 'last' } }],
+          orderBy: [{ externalOrderId: 'asc' }],
         }),
       );
     });
 
-    it('sortBy=store → ordena por store.name con subsort por externalOrderNumber', async () => {
+    it('sortBy=store → ordena por store.name con subsort por externalOrderId', async () => {
       await service.getOrders(1, 50, { sortBy: 'store', sortDir: 'asc' });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: [
             { store: { name: 'asc' } },
-            { externalOrderNumber: { sort: 'asc', nulls: 'last' } },
+            { externalOrderId: 'asc' },
           ],
         }),
       );
     });
 
-    it('sortBy=store desc → subsort externalOrderNumber también desc', async () => {
+    it('sortBy=store desc → subsort externalOrderId también desc', async () => {
       await service.getOrders(1, 50, { sortBy: 'store', sortDir: 'desc' });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           orderBy: [
             { store: { name: 'desc' } },
-            { externalOrderNumber: { sort: 'desc', nulls: 'last' } },
+            { externalOrderId: 'desc' },
           ],
         }),
       );
@@ -174,7 +174,7 @@ describe('AdminService', () => {
       );
     });
 
-    it('q → OR sobre las 4 columnas con mode insensitive', async () => {
+    it('q → OR sobre 4 columnas (externalOrderId, no externalOrderNumber) con mode insensitive', async () => {
       await service.getOrders(1, 50, { q: 'garcia' });
       expect(mockPrisma.order.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -183,7 +183,7 @@ describe('AdminService', () => {
               {
                 OR: [
                   { store: { name: { contains: 'garcia', mode: 'insensitive' } } },
-                  { externalOrderNumber: { contains: 'garcia', mode: 'insensitive' } },
+                  { externalOrderId: { contains: 'garcia', mode: 'insensitive' } },
                   { user: { firstName: { contains: 'garcia', mode: 'insensitive' } } },
                   { user: { lastName: { contains: 'garcia', mode: 'insensitive' } } },
                 ],
@@ -554,7 +554,7 @@ describe('AdminService', () => {
       status: 'COMPLETED',
       startedAt: new Date('2026-02-21T10:01:00Z'),
       completedAt: new Date('2026-02-21T10:05:00Z'),
-      order: { externalOrderNumber: '#1001', externalOrderId: 'wc-1001' },
+      order: { externalOrderId: '100' },
     };
 
     const mockMessages = [
@@ -568,7 +568,7 @@ describe('AdminService', () => {
       },
     ];
 
-    it('devuelve mensajes con metadata de conversación', async () => {
+    it('devuelve mensajes con metadata de conversación y externalOrderId directamente', async () => {
       mockPrisma.conversation.findUnique.mockResolvedValue(mockConversation);
       mockMockConversations.getConversationHistory.mockResolvedValue(mockMessages);
 
@@ -577,21 +577,9 @@ describe('AdminService', () => {
       expect(result.conversationId).toBe('conv-1');
       expect(result.conversation.type).toBe('GET_ADDRESS');
       expect(result.conversation.status).toBe('COMPLETED');
-      expect(result.conversation.order.externalOrderNumber).toBe('#1001');
+      expect(result.conversation.order.externalOrderId).toBe('100');
       expect(result.messages).toHaveLength(1);
       expect(result.messages[0].messageId).toBe('msg-1');
-    });
-
-    it('usa externalOrderId como fallback si externalOrderNumber es null', async () => {
-      mockPrisma.conversation.findUnique.mockResolvedValue({
-        ...mockConversation,
-        order: { externalOrderNumber: null, externalOrderId: 'wc-1001' },
-      });
-      mockMockConversations.getConversationHistory.mockResolvedValue([]);
-
-      const result = await service.getConversationMessages('conv-1');
-
-      expect(result.conversation.order.externalOrderNumber).toBe('wc-1001');
     });
 
     it('lanza NotFoundException cuando la conversación no existe en Prisma', async () => {

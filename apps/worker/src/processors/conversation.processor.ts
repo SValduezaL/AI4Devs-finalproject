@@ -186,7 +186,7 @@ async function processGetAddressJourney(
     preferredLanguage: string | null;
     isRegistered: boolean;
   },
-  order: { externalOrderNumber: string | null; store: { name: string } },
+  order: { externalOrderId: string; store: { name: string } },
   context?: MockOrderContext,
 ) {
   const name = user.firstName ?? 'Cliente';
@@ -254,7 +254,7 @@ async function processGetAddressJourney(
   }
 
   // ─── Sub-journey 2.2 / 2.4: pregunta dirección estándar ──
-  const userPrompt = buildGetAddressUserPrompt({ name, storeName, orderNumber: order.externalOrderNumber, language });
+  const userPrompt = buildGetAddressUserPrompt({ name, storeName, orderNumber: order.externalOrderId, language });
   const assistantMessage = await _llmService.generateMessage({ systemPrompt, userPrompt });
 
   await saveMessage(conversationId, 'system', systemPrompt);
@@ -312,7 +312,7 @@ interface HandlerContext {
     isRegistered: boolean;
     phone: { id: string } | null;
   };
-  order: { externalOrderNumber: string | null; store: { name: string } };
+  order: { externalOrderId: string; store: { name: string } };
 }
 
 export async function processResponseProcessor(job: Job<ProcessResponseJobData>) {

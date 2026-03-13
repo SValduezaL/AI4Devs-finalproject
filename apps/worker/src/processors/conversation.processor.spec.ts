@@ -99,7 +99,6 @@ describe('conversationProcessor INFORMATION journey', () => {
     });
     (instance.order.findUnique as jest.Mock).mockResolvedValue({
       externalOrderId: 'EXT-12345',
-      externalOrderNumber: null,
       store: { name: 'ModaMujer Outlet' },
       orderAddress: { fullAddress: 'Calle Mayor 1, 3º A, 28001 Madrid' },
     });
@@ -173,7 +172,6 @@ describe('conversationProcessor INFORMATION journey', () => {
     const instance = new (PrismaClient as jest.Mock)();
     (instance.order.findUnique as jest.Mock).mockResolvedValue({
       externalOrderId: 'EXT-999',
-      externalOrderNumber: null,
       store: { name: 'Tienda Y' },
       orderAddress: null,
     });
@@ -202,6 +200,63 @@ describe('conversationProcessor INFORMATION journey', () => {
   });
 });
 
+describe('conversationProcessor GET_ADDRESS journey', () => {
+  const jobData = {
+    conversationId: 'conv-get-1',
+    orderId: 'order-get-1',
+    userId: 'user-get-1',
+    conversationType: 'GET_ADDRESS' as const,
+    context: undefined,
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    mockLLMService.generateMessage.mockResolvedValue('[MOCK] ¿Cuál es tu dirección de entrega para el pedido #MM-01001-OUT?');
+    const { PrismaClient } = await import('@adresles/prisma-db');
+    const instance = new (PrismaClient as jest.Mock)();
+    (instance.user.findUnique as jest.Mock).mockResolvedValue({
+      id: 'user-get-1',
+      firstName: 'Laura',
+      lastName: 'Gómez',
+      preferredLanguage: 'es',
+      isRegistered: false,
+      phone: { id: 'phone-get-1' },
+    });
+    (instance.order.findUnique as jest.Mock).mockResolvedValue({
+      externalOrderId: 'MM-01001-OUT',
+      store: { name: 'ModaMujer Outlet' },
+      orderAddress: null,
+    });
+    (instance.address.findMany as jest.Mock).mockResolvedValue([]);
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    (dynamo.saveMessage as jest.Mock).mockResolvedValue(undefined);
+    (dynamo.saveConversationState as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  it('usa externalOrderId en el prompt al LLM (nunca N/A)', async () => {
+    const { conversationProcessor } = await import('./conversation.processor');
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+
+    const userPromptCall = (dynamo.saveMessage as jest.Mock).mock.calls.find(
+      (c: unknown[]) => c[0] === 'conv-get-1' && c[1] === 'user',
+    );
+    expect(userPromptCall).toBeDefined();
+    const userPrompt = userPromptCall?.[2] as string;
+    expect(userPrompt).toContain('MM-01001-OUT');
+    expect(userPrompt).not.toContain('N/A');
+  });
+
+  it('el LLM recibe generateMessage cuando no hay dirección ecommerce ni dirección guardada', async () => {
+    const { conversationProcessor } = await import('./conversation.processor');
+    const job = { data: jobData } as never;
+    await conversationProcessor(job);
+
+    expect(mockLLMService.generateMessage).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('processResponseProcessor WAITING_SAVE_ADDRESS and WAITING_SAVE_ADDRESS_LABEL', () => {
   const jobData = {
     conversationId: 'conv-1',
@@ -221,7 +276,6 @@ describe('processResponseProcessor WAITING_SAVE_ADDRESS and WAITING_SAVE_ADDRESS
 
   const baseOrder = {
     externalOrderId: 'EXT-1',
-    externalOrderNumber: 'EXT-1',
     store: { name: 'StoreX' },
     orderAddress: null as { fullAddress: string } | null,
   };
@@ -413,7 +467,6 @@ describe('processResponseProcessor offerSaveAddress — dirección ya en libreta
 
   const baseOrder = {
     externalOrderId: 'EXT-1',
-    externalOrderNumber: 'EXT-1',
     store: { name: 'StoreX' },
     orderAddress: null as { fullAddress: string } | null,
   };

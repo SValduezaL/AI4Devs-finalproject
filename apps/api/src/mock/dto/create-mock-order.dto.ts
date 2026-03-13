@@ -113,8 +113,9 @@ export class CreateMockOrderDto {
   @IsObject()
   store!: MockStoreDto;
 
+  @IsOptional()
   @IsString()
-  external_order_id!: string;
+  external_order_id?: string;
 
   @IsOptional()
   @IsString()

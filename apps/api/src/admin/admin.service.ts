@@ -104,7 +104,7 @@ export class AdminService {
       conditions.push({
         OR: [
           { store: { name: { contains: q, mode: 'insensitive' } } },
-          { externalOrderNumber: { contains: q, mode: 'insensitive' } },
+          { externalOrderId: { contains: q, mode: 'insensitive' } },
           { user: { firstName: { contains: q, mode: 'insensitive' } } },
           { user: { lastName: { contains: q, mode: 'insensitive' } } },
         ],
@@ -146,7 +146,7 @@ export class AdminService {
   }
 
   private buildOrderBy(sortBy: string | undefined, dir: 'asc' | 'desc') {
-    const refSort = { externalOrderNumber: { sort: dir, nulls: 'last' as const } };
+    const refSort = { externalOrderId: dir };
 
     switch (sortBy) {
       case 'ref':
@@ -353,7 +353,7 @@ export class AdminService {
       where: { id: conversationId },
       include: {
         order: {
-          select: { externalOrderNumber: true, externalOrderId: true },
+          select: { externalOrderId: true },
         },
       },
     });
@@ -373,9 +373,7 @@ export class AdminService {
         startedAt: conversation.startedAt,
         completedAt: conversation.completedAt,
         order: {
-          externalOrderNumber:
-            conversation.order.externalOrderNumber ??
-            conversation.order.externalOrderId,
+          externalOrderId: conversation.order.externalOrderId,
         },
       },
       messages: messages.map((m) => ({

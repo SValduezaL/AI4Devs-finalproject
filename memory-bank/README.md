@@ -1,8 +1,8 @@
 # Memory Bank - Adresles
 
 > **Contexto persistente del proyecto para sesiones de IA**  
-> **Última actualización**: 2026-03-12  
-> ✅ **Change completado**: admin-addresses-page — nueva página `/addresses` en el Dashboard Admin (tabla paginada, sort en 7 columnas, búsqueda OR en 13 campos, filtro Favorita, `formatAddress` con separador diferenciado); 96 tests pasando
+> **Última actualización**: 2026-03-13  
+> ✅ **Change completado**: external-order-id-coherence — `externalOrderId` como única referencia activa (UI, búsqueda, sort, LLM); `ExternalOrderIdService` con generación por plataforma; `external_order_id` opcional en mock DTO; 210 tests pasando (161 API + 49 Worker)
 
 ## 📖 Inicio Rápido
 
@@ -93,6 +93,7 @@ Pendiente de documentar:
 | [2026-03-08](./sessions/2026-03-08-llm-service-abstraction.md) | llm-service-abstraction — Abstracción ILLMService, desacoplamiento OpenAI SDK — Completado | ✅ Completado (15/15 tareas, 41 tests) |
 | [2026-03-09](./sessions/2026-03-09-fix-information-journey-confirmation-message.md) | fix-information-journey-confirmation-message — Primer mensaje INFORMATION (compra tradicional) — Completado | ✅ Completado (10/10 tareas, 14 tests) |
 | [2026-03-12](./sessions/2026-03-12-admin-addresses-page.md) | admin-addresses-page — Página `/addresses` en Dashboard Admin (tabla, sort, búsqueda, filtro Favorita) — Completado | ✅ Completado (29/29 tareas, 96 tests) |
+| [2026-03-13](./sessions/2026-03-13-external-order-id-coherence.md) | external-order-id-coherence — `externalOrderId` como fuente única; `ExternalOrderIdService` por plataforma; DTO opcional — Completado | ✅ Completado (39/39 tareas, 210 tests) |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
@@ -175,7 +176,7 @@ Este memory-bank permite a la IA:
 
 ---
 
-**Última revisión**: 2026-03-12  
+**Última revisión**: 2026-03-13  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: admin-addresses-page completado — nueva página `/addresses` en el Dashboard Admin con tabla paginada, sort en 7 columnas, búsqueda OR en 13 campos y filtro Favorita; `formatAddress()` con separador diferenciado (espacio entre calle/número, coma para el resto); patrón `admin-table-page-patterns` documentado (aplicado en 3 páginas: orders, users, addresses); sesión 2026-03-12 registrada.  
+**Cambios recientes**: external-order-id-coherence completado — `externalOrderId` consolidado como fuente única de verdad (elimina ambigüedad con `externalOrderNumber`); nuevo `ExternalOrderIdService` con generación realista por plataforma (WooCommerce/Shopify/PrestaShop); `external_order_id` opcional en DTO (backend lo genera si no viene); 39 tareas, 210 tests; glosario y sesión actualizados.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo

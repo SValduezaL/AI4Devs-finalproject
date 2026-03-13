@@ -82,6 +82,14 @@ Configuración específica de cada tienda (API keys, webhook URLs, opciones de p
 #### **Phone** (Entidad Teléfono)
 Entidad centralizada que almacena números de teléfono normalizados en formato E.164. Es la única fuente de verdad para datos telefónicos, referenciada por `User`, `GiftRecipient` y `OrderAddress`. Incluye desglose del número (prefijo país, número nacional, tipo de línea) y formatos de presentación.
 
+#### **externalOrderId**
+Referencia única del pedido en la plataforma eCommerce de origen. Campo **NOT NULL** y **fuente única de verdad** para referenciar un pedido en la UI, búsquedas, sort y mensajes al LLM. Generado automáticamente por `ExternalOrderIdService` con formato realista por plataforma si no viene en el payload mock:
+- `WOOCOMMERCE`: numérico entero (ej: `"118"`)
+- `SHOPIFY`: patrón con prefijo/sufijo y número de 4+ dígitos (ej: `"MM-01007-OUT"`)
+- `PRESTASHOP`: 9 letras mayúsculas aleatorias (ej: `"XCVBGTWQA"`)
+
+> ⚠️ **Nota**: El modelo Prisma también tiene `externalOrderNumber` (nullable), que era el campo de referencia en versiones anteriores. A partir del change `external-order-id-coherence` (2026-03-13), `externalOrderNumber` queda como campo legacy sin uso activo. `externalOrderId` es la única referencia operativa.
+
 #### **Order Mode** (Modo de Pedido)
 Modo operativo de un pedido:
 - `TRADITIONAL`: El comprador introdujo dirección en el checkout del eCommerce (flujo estándar)
@@ -238,13 +246,12 @@ Interfaz administrativa que permite ingresar manualmente JSONs de compra para si
 
 #### **JSON Order Mock**
 Estructura JSON que contiene todos los datos de una compra simulada:
-- `store_name`, `store_url`: Identificación de la tienda
-- `order_id`, `order_number`: Identificación del pedido
+- `store`: `{ name, url }` — identificación de la tienda
+- `external_order_id`: (opcional) Referencia del pedido en la plataforma eCommerce. Si se omite, el backend lo genera automáticamente con formato realista según la plataforma (ver `ExternalOrderIdService`)
 - `buyer`: Datos del comprador (nombre, teléfono, email)
 - `mode`: "adresles" o "tradicional"
-- `delivery_address`: (opcional) Dirección si modo tradicional
-- `is_gift`: Boolean indicando si es regalo
-- `gift_recipient`: (opcional) Datos del regalado
+- `address`: (opcional) Dirección si modo tradicional
+- `gift_recipient`: (opcional) Datos del destinatario en modo regalo
 - `items`: Lista de productos
 - `total_amount`, `currency`: Importe y moneda
 
@@ -265,8 +272,9 @@ Proceso donde el usuario puede optar por registrarse en Adresles después de com
 
 ---
 
-**Última actualización**: 2026-03-02  
+**Última actualización**: 2026-03-13  
 **Mantenido por**: Sergio  
 **Cambios v1.4**: OrderStatus actualizado (nuevos estados PENDING_PAYMENT, READY_TO_PROCESS, COMPLETED, CANCELED); añadidos términos Phone, OrderMode, PaymentType, AddressOrigin  
 **Cambios v1.5**: Order Status — semántica corregida: READY_TO_PROCESS es el estado final del MVP; COMPLETED reservado para integración real. Añadidos términos StatusSource y syncedAt (`cu03-b1-worker-db-sync`)  
+**Cambios v1.6**: `externalOrderId` consolidado como fuente única de verdad; `externalOrderNumber` marcado como campo legacy. `JSON Order Mock` actualizado (`external_order_id` opcional, generado por backend). Añadida entrada `externalOrderId` / `ExternalOrderIdService` (`external-order-id-coherence`, 2026-03-13)  
 **Evoluciona con**: Cada nuevo término del dominio que surja durante el desarrollo

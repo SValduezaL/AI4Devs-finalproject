@@ -4,6 +4,7 @@ import { MockOrdersService } from './mock-orders.service';
 import { StoresService } from '../stores/stores.service';
 import { UsersService } from '../users/users.service';
 import { OrdersService } from '../orders/orders.service';
+import { ExternalOrderIdService } from '../orders/external-order-id.service';
 import { ConversationsService } from '../conversations/conversations.service';
 import { EcommerceSyncService } from '../ecommerce-sync/ecommerce-sync.service';
 import { CreateMockOrderDto } from './dto/create-mock-order.dto';
@@ -11,13 +12,13 @@ import { CreateMockOrderDto } from './dto/create-mock-order.dto';
 const mockStores = { findOrCreateStore: jest.fn() };
 const mockUsers = { findOrCreateByPhone: jest.fn() };
 const mockOrders = { createFromMock: jest.fn(), updateStatus: jest.fn() };
+const mockExternalOrderId = { generate: jest.fn() };
 const mockConversations = { createAndEnqueue: jest.fn() };
 const mockEcommerceSync = { simulateSync: jest.fn() };
 
 const baseAdreslesDto: CreateMockOrderDto = {
   store: { name: 'Tienda Demo', url: 'https://demo.example.com' },
   external_order_id: 'ext-001',
-  external_order_number: 'ORD-001',
   buyer: {
     first_name: 'Ana',
     last_name: 'García',
@@ -55,6 +56,7 @@ describe('MockOrdersService', () => {
         { provide: StoresService, useValue: mockStores },
         { provide: UsersService, useValue: mockUsers },
         { provide: OrdersService, useValue: mockOrders },
+        { provide: ExternalOrderIdService, useValue: mockExternalOrderId },
         { provide: ConversationsService, useValue: mockConversations },
         { provide: EcommerceSyncService, useValue: mockEcommerceSync },
       ],
@@ -67,6 +69,7 @@ describe('MockOrdersService', () => {
     mockUsers.findOrCreateByPhone.mockResolvedValue({ id: 'user-1', phoneId: 'phone-1' });
     mockOrders.createFromMock.mockResolvedValue({ id: 'order-1' });
     mockOrders.updateStatus.mockResolvedValue({ id: 'order-1' });
+    mockExternalOrderId.generate.mockResolvedValue('generated-123');
     mockConversations.createAndEnqueue.mockResolvedValue({ id: 'conv-1' });
   });
 
@@ -120,6 +123,33 @@ describe('MockOrdersService', () => {
         expect.not.objectContaining({ createAddress: expect.anything() }),
       );
       expect(mockEcommerceSync.simulateSync).not.toHaveBeenCalled();
+    });
+
+    it('usa el external_order_id explícito del DTO sin llamar al generador', async () => {
+      await service.processMockOrder(baseAdreslesDto);
+
+      expect(mockExternalOrderId.generate).not.toHaveBeenCalled();
+      expect(mockOrders.createFromMock).toHaveBeenCalledWith(
+        expect.objectContaining({ external_order_id: 'ext-001' }),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
+    it('genera external_order_id automáticamente si no viene en el DTO', async () => {
+      const { external_order_id: _id, ...dtoSinId } = baseAdreslesDto;
+      const dto: CreateMockOrderDto = { ...dtoSinId };
+
+      await service.processMockOrder(dto);
+
+      expect(mockExternalOrderId.generate).toHaveBeenCalledWith('store-1');
+      expect(mockOrders.createFromMock).toHaveBeenCalledWith(
+        expect.objectContaining({ external_order_id: 'generated-123' }),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+      );
     });
   });
 

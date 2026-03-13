@@ -131,7 +131,6 @@ export function OrderConfigModal({
 
     const payload = {
       store: { name: selectedStore.name, url: selectedStore.url },
-      external_order_id: `SIM-${Date.now()}`,
       buyer: {
         first_name: buyer.firstName,
         last_name: buyer.lastName,

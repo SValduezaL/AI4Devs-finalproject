@@ -536,8 +536,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user1.id,
-      externalOrderId: 'WC-10001',
-      externalOrderNumber: '#10001',
+      externalOrderId: '100',
       totalAmount: 89.95,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -556,8 +555,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user1.id,
-      externalOrderId: 'WC-10002',
-      externalOrderNumber: '#10002',
+      externalOrderId: '102',
       totalAmount: 124.5,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -576,8 +574,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user2.id,
-      externalOrderId: 'WC-10003',
-      externalOrderNumber: '#10003',
+      externalOrderId: '105',
       totalAmount: 59.99,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -596,8 +593,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user3.id,
-      externalOrderId: 'WC-10004',
-      externalOrderNumber: '#10004',
+      externalOrderId: '108',
       totalAmount: 45.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -616,8 +612,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user3.id,
-      externalOrderId: 'WC-10005',
-      externalOrderNumber: '#10005',
+      externalOrderId: '110',
       totalAmount: 210.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -636,8 +631,7 @@ async function main() {
     data: {
       storeId: store2.id,
       userId: user3.id,
-      externalOrderId: 'SH-20001',
-      externalOrderNumber: '#20001',
+      externalOrderId: 'MM-01001-OUT',
       totalAmount: 75.8,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -655,8 +649,7 @@ async function main() {
     data: {
       storeId: store2.id,
       userId: user3.id,
-      externalOrderId: 'SH-20002',
-      externalOrderNumber: '#20002',
+      externalOrderId: 'MM-01002-OUT',
       totalAmount: 99.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -674,8 +667,7 @@ async function main() {
     data: {
       storeId: store2.id,
       userId: user4.id,
-      externalOrderId: 'SH-20003',
-      externalOrderNumber: '#20003',
+      externalOrderId: 'MM-01003-OUT',
       totalAmount: 149.9,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -694,8 +686,7 @@ async function main() {
     data: {
       storeId: store2.id,
       userId: user4.id,
-      externalOrderId: 'SH-20004',
-      externalOrderNumber: '#20004',
+      externalOrderId: 'MM-01004-OUT',
       totalAmount: 350.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -714,8 +705,7 @@ async function main() {
     data: {
       storeId: store3.id,
       userId: user4.id,
-      externalOrderId: 'PS-30001',
-      externalOrderNumber: '#30001',
+      externalOrderId: 'XCVBGTWQA',
       totalAmount: 299.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -734,8 +724,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user5.id,
-      externalOrderId: 'WC-10006',
-      externalOrderNumber: '#10006',
+      externalOrderId: '113',
       totalAmount: 32.5,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -754,8 +743,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user6.id,
-      externalOrderId: 'WC-10007',
-      externalOrderNumber: '#10007',
+      externalOrderId: '115',
       totalAmount: 67.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -772,8 +760,7 @@ async function main() {
     data: {
       storeId: store2.id,
       userId: user6.id,
-      externalOrderId: 'SH-20005',
-      externalOrderNumber: '#20005',
+      externalOrderId: 'MM-01005-OUT',
       totalAmount: 55.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -792,8 +779,7 @@ async function main() {
     data: {
       storeId: store3.id,
       userId: user7.id,
-      externalOrderId: 'PS-30002',
-      externalOrderNumber: '#30002',
+      externalOrderId: 'KLMNPRSTB',
       totalAmount: 189.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -812,8 +798,7 @@ async function main() {
     data: {
       storeId: store2.id,
       userId: user8.id,
-      externalOrderId: 'SH-20006',
-      externalOrderNumber: '#20006',
+      externalOrderId: 'MM-01006-OUT',
       totalAmount: 78.5,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -832,8 +817,7 @@ async function main() {
     data: {
       storeId: store3.id,
       userId: user8.id,
-      externalOrderId: 'PS-30003',
-      externalOrderNumber: '#30003',
+      externalOrderId: 'FGHWQZXCD',
       totalAmount: 420.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -851,8 +835,7 @@ async function main() {
     data: {
       storeId: store1.id,
       userId: user9.id,
-      externalOrderId: 'WC-10008',
-      externalOrderNumber: '#10008',
+      externalOrderId: '118',
       totalAmount: 44.95,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -871,8 +854,7 @@ async function main() {
     data: {
       storeId: store3.id,
       userId: user9.id,
-      externalOrderId: 'PS-30004',
-      externalOrderNumber: '#30004',
+      externalOrderId: 'BVNMKLJHQ',
       totalAmount: 119.0,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -891,8 +873,7 @@ async function main() {
     data: {
       storeId: store3.id,
       userId: user9.id,
-      externalOrderId: 'PS-30005',
-      externalOrderNumber: '#30005',
+      externalOrderId: 'RTYUIOPAS',
       totalAmount: 89.99,
       currency: 'EUR',
       feePercentage: 2.5,
@@ -909,8 +890,7 @@ async function main() {
     data: {
       storeId: store2.id,
       userId: user10.id,
-      externalOrderId: 'SH-20007',
-      externalOrderNumber: '#20007',
+      externalOrderId: 'MM-01007-OUT',
       totalAmount: 65.0,
       currency: 'EUR',
       feePercentage: 2.5,

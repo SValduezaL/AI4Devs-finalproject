@@ -177,10 +177,13 @@ El modal SHALL mostrar un botón "Productos aleatorios" que seleccione una entra
 
 Al pulsar "Simular Compra", el sistema SHALL construir el payload `CreateMockOrderPayload`, llamar a `startSimulation()`, y en caso de éxito cerrar el modal y notificar a `SimulationPage`. Durante la llamada el botón SHALL estar deshabilitado y mostrar un spinner. En caso de error SHALL mostrarse un toast destructivo y el modal permanecer abierto.
 
-#### Scenario: Submit exitoso
+**El payload NO incluye el campo `external_order_id`**. El backend genera automáticamente el `externalOrderId` según la plataforma de la tienda seleccionada. El tipo `CreateMockOrderPayload` en `types/api.ts` define `external_order_id` como campo **opcional** (`external_order_id?: string`).
+
+#### Scenario: Submit exitoso — payload sin external_order_id
 
 - **WHEN** el administrador pulsa "Simular Compra" con el formulario válido
 - **THEN** `startSimulation(payload)` SHALL ser llamado con el payload correcto
+- **AND** el payload NO incluye el campo `external_order_id` (ni `"SIM-<timestamp>"` ni ningún otro valor generado en el frontend)
 - **AND** el modal SHALL cerrarse
 - **AND** `onConversationStarted` SHALL ser llamado con `{ conversationId, orderId, summary }`
 - **AND** `summary` SHALL tener el formato `"${storeName} · ${firstName} ${lastName} · ${total} ${currency}"`
