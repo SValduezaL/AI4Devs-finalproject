@@ -96,7 +96,7 @@ coverage/
 # Package managers
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
+# pnpm-lock.yaml NO se ignora — debe commitarse para builds reproducibles en CI/CD y Docker
 .pnpm-store/
 
 # ============================================
@@ -191,6 +191,9 @@ obj/
 *.secret
 secrets.yml
 config/secrets.yml
+# Las plantillas de ejemplo SÍ se commitean
+!.env.prod.example
+!.env.example
 
 # ============================================
 # Logs y Archivos Temporales
@@ -210,7 +213,6 @@ logs/
 # ============================================
 
 docker-compose.override.yml
-.dockerignore
 
 # ============================================
 # Cloud y Deployment

@@ -2,7 +2,7 @@
 
 > **Contexto persistente del proyecto para sesiones de IA**  
 > **Última actualización**: 2026-03-15  
-> ✅ **Sesión completada**: dynamodb-aws-migration — DynamoDB Local migrado a AWS real (Dev: eu-west-1, Prod: eu-central-1); IAM Users con mínimo privilegio; `DYNAMODB_TABLE_NAME` configurable por entorno; validación end-to-end confirmada; ADR-010 creado
+> ✅ **Sesión completada**: production-deployment — MVP desplegado en producción: API + Worker + Redis en AWS Lightsail (`backend.adresles.com`) con Docker Compose + Caddy (HTTPS automático); Dashboard Admin en Vercel (`simulator.adresles.com`); CI/CD GitHub Actions → ECR → SSH; ADR-011 creado
 
 ## 📖 Inicio Rápido
 
@@ -28,6 +28,7 @@ Decisiones clave que guían el desarrollo del proyecto:
 | [008](./architecture/008-prisma-schema-worker-opcion-c.md) | Worker apunta al schema Prisma del API (Opción C, stepping stone) | ✅ Aceptada | 2026-03-02 |
 | [009](./architecture/009-prisma-db-package.md) | `packages/prisma-db` — Fuente Única del Schema Prisma (Opción B) | ✅ Aceptada | 2026-03-02 |
 | [010](./architecture/010-dynamodb-aws-multienv.md) | DynamoDB en AWS con Entornos Separados e IAM de Mínimo Privilegio | ✅ Aceptada | 2026-03-15 |
+| [011](./architecture/011-docker-ecr-lightsail-caddy.md) | Despliegue Producción — Docker + ECR + AWS Lightsail + Caddy | ✅ Aceptada | 2026-03-15 |
 
 ## 🎨 Patrones y Convenciones
 
@@ -96,6 +97,7 @@ Pendiente de documentar:
 | [2026-03-12](./sessions/2026-03-12-admin-addresses-page.md) | admin-addresses-page — Página `/addresses` en Dashboard Admin (tabla, sort, búsqueda, filtro Favorita) — Completado | ✅ Completado (29/29 tareas, 96 tests) |
 | [2026-03-13](./sessions/2026-03-13-external-order-id-coherence.md) | external-order-id-coherence — `externalOrderId` como fuente única; `ExternalOrderIdService` por plataforma; DTO opcional — Completado | ✅ Completado (39/39 tareas, 210 tests) |
 | [2026-03-15](./sessions/2026-03-15-dynamodb-aws-migration.md) | dynamodb-aws-migration — DynamoDB Local → AWS real (Dev eu-west-1 + Prod eu-central-1); IAM mínimo privilegio; `DYNAMODB_TABLE_NAME` configurable; validación end-to-end — Completado | ✅ Completado (infraestructura) |
+| [2026-03-15](./sessions/2026-03-15-production-deployment.md) | production-deployment — MVP en producción: Lightsail + ECR + Caddy + Vercel; CI/CD GitHub Actions; `backend.adresles.com` + `simulator.adresles.com` — Completado | ✅ Completado (producción live) |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
@@ -137,7 +139,8 @@ memory-bank/
 │   ├── 007-shared-types-package.md
 │   ├── 008-prisma-schema-worker-opcion-c.md
 │   ├── 009-prisma-db-package.md
-│   └── 010-dynamodb-aws-multienv.md
+│   ├── 010-dynamodb-aws-multienv.md
+│   └── 011-docker-ecr-lightsail-caddy.md
 │
 ├── patterns/                   # Patrones y convenciones
 │   ├── validation-patterns.md       # DTOs, class-validator, supertest
@@ -181,5 +184,5 @@ Este memory-bank permite a la IA:
 
 **Última revisión**: 2026-03-15  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: dynamodb-aws-migration completado — DynamoDB Local migrado a AWS real con dos entornos aislados (Dev eu-west-1, Prod eu-central-1); IAM Users `adresles-app-dev` y `adresles-app-prod` con mínimo privilegio (solo 4 acciones sobre su tabla); `DYNAMODB_TABLE_NAME` configurable por variable de entorno; script de validación `validate-dynamodb-aws.ts`; ADR-010 creado; ADR-002 actualizado con esquema real; readme.md del proyecto actualizado.  
+**Cambios recientes**: production-deployment completado — MVP desplegado en AWS Lightsail (`backend.adresles.com`) + Vercel (`simulator.adresles.com`); Dockerfiles multi-stage para API y Worker; `docker-compose.prod.yml` + `Caddyfile`; CI/CD con GitHub Actions → ECR → SSH; bugs resueltos (Prisma + Alpine OpenSSL 3.x, `dist/src/main.js`, dotenv en dependencies, Vercel monorepo output directory); ADR-011 creado; session-2026-03-15-production-deployment.md añadida.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo

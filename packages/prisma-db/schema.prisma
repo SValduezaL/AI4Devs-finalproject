@@ -2,8 +2,9 @@
 // Data model from Adresles_Business.md Section 3.2-3.3
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "./generated"
+  provider      = "prisma-client-js"
+  output        = "./generated"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

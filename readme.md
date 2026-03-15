@@ -32,7 +32,7 @@ Adresles es una plataforma SaaS B2B2C que revoluciona la experiencia de checkout
 https://github.com/SValduezaL/AI4Devs-finalproject
 
 > Repositorio público en GitHub  
-> Ramas principales: `finalproject-SVL` (base), `finalproject-SVL-v2` (Monorepo MVP Mock)
+> Ramas principales: `finalproject-SVL` (base), `finalproject-SVL-v2` (Monorepo MVP Mock), `finalproject-SVL-v3` (rama de producción activa)
 
 ### 0.5. URL o archivo comprimido del repositorio
 
@@ -170,7 +170,7 @@ La conversación con el agente IA (GPT-4) incluye:
 > 📖 **Journeys detallados**: [Adresles_Business.md - Sección 1.6](./Adresles_Business.md#16-user-journeys-detallados)  
 > 📖 **Diagramas de secuencia**: [Adresles_Business.md - Sección 4.8](./Adresles_Business.md#48-diagramas-de-secuencia)
 
-> ⚠️ **Estado actual (marzo 2026)**: Monorepo funcional con MVP Mock operativo. Backend (API + Worker), frontend admin con simulador de chat en tiempo real. Integraciones OpenAI y Google Maps preparadas pero mockeadas. Ver [PR 20260302.md](./PR%2020260302.md) y [memory-bank/README.md](./memory-bank/README.md).
+> ✅ **Estado actual (marzo 2026)**: MVP completo desplegado en producción. Backend (API + Worker + Redis) en AWS Lightsail con Docker Compose + Caddy HTTPS → `https://backend.adresles.com`. Dashboard Admin en Vercel → `https://simulator.adresles.com`. CI/CD automatizado con GitHub Actions → ECR → SSH. Ver [memory-bank/README.md](./memory-bank/README.md) y [ADR-011](./memory-bank/architecture/011-docker-ecr-lightsail-caddy.md).
 
 ### **1.4. Instrucciones de instalación:**
 
@@ -185,9 +185,9 @@ La conversación con el agente IA (GPT-4) incluye:
 - **IA Conversacional**: OpenAI GPT-4
 - **Validación de Direcciones**: Google Maps API (Geocoding)
 - **Colas**: Redis + BullMQ
-- **Deployment**: Docker Compose + Traefik (reverse proxy con SSL automático)
-- **CI/CD**: GitHub Actions
-- **Hosting**: Servidor dedicado Konsole H (backend) + Vercel (dashboard admin)
+- **Deployment**: Docker Compose + Caddy (reverse proxy con SSL automático vía Let's Encrypt)
+- **CI/CD**: GitHub Actions → AWS ECR → SSH
+- **Hosting**: AWS Lightsail `backend.adresles.com` (backend) + Vercel `simulator.adresles.com` (dashboard admin)
 
 #### **Estructura del Proyecto (Monorepo Turborepo)**
 
@@ -220,7 +220,9 @@ adresles/
 | **AWS DynamoDB** | Mensajes conversacionales (alta volumetría) | Pay-per-request — `adresles-messages-dev` (eu-west-1) y `adresles-messages-prod` (eu-central-1) |
 | **OpenAI**       | API GPT-4 para conversaciones               | API Key requerida          |
 | **Google Maps**  | Geocoding y validación de direcciones       | API Key requerida          |
-| **Vercel**       | Hosting Dashboard Admin (opcional)          | Free tier disponible       |
+| **Vercel**       | Hosting Dashboard Admin (`simulator.adresles.com`) | Free tier — producción activa |
+| **AWS Lightsail** | Servidor producción (API + Worker + Redis) | `backend.adresles.com` — $12/mes |
+| **AWS ECR**      | Registry privado imágenes Docker            | `eu-central-1` — `adresles-api`, `adresles-worker` |
 
 #### **Variables de Entorno**
 
@@ -304,10 +306,26 @@ pnpm --filter worker test     # Solo Worker
 pnpm --filter api test:cov    # API con cobertura
 ```
 
+#### **Deployment en Producción**
+
+El backend se despliega en **AWS Lightsail** con Docker Compose. El frontend Admin en **Vercel**.
+
+```
+API:    https://backend.adresles.com     → AWS Lightsail (52.57.222.42)
+Admin:  https://simulator.adresles.com  → Vercel
+```
+
+El CI/CD (`.github/workflows/deploy.yml`) se activa con push a `main`:
+1. Build y push imágenes a AWS ECR (`eu-central-1`)
+2. SSH al servidor → `docker compose pull` + `docker compose up -d`
+
+> Ver [ADR-011](./memory-bank/architecture/011-docker-ecr-lightsail-caddy.md) para la arquitectura completa de producción.
+
 > 📖 **Arquitectura completa**: [Adresles_Business.md - Fase 4](./Adresles_Business.md#fase-4-diseño-de-alto-nivel)  
 > 📖 **Stack detallado**: [memory-bank/project-context/tech-stack.md](./memory-bank/project-context/tech-stack.md)  
 > 📖 **Memory-Bank (índice)**: [memory-bank/README.md](./memory-bank/README.md)  
-> 📖 **Docker Compose**: [infrastructure/docker/docker-compose.yml](./infrastructure/docker/docker-compose.yml)
+> 📖 **Docker Compose dev**: [infrastructure/docker/docker-compose.yml](./infrastructure/docker/docker-compose.yml)  
+> 📖 **Docker Compose prod**: [infrastructure/docker/docker-compose.prod.yml](./infrastructure/docker/docker-compose.prod.yml)
 
 ---
 
@@ -414,7 +432,8 @@ C4Container
 
 > 📖 **Diagramas C4 completos**: [Adresles_Business.md - Secciones 4.2-4.4](./Adresles_Business.md#42-diagrama-c4---nivel-1-contexto-del-sistema)  
 > 📖 **ADR Arquitectura**: [memory-bank/architecture/001-monolith-modular.md](./memory-bank/architecture/001-monolith-modular.md)  
-> 📖 **ADRs 005-009 (BullMQ, SSE, shared-types, prisma-db)**: [memory-bank/README.md#-decisiones-arquitecturales-adrs](./memory-bank/README.md#-decisiones-arquitecturales-adrs)
+> 📖 **ADRs 005-009 (BullMQ, SSE, shared-types, prisma-db)**: [memory-bank/README.md#-decisiones-arquitecturales-adrs](./memory-bank/README.md#-decisiones-arquitecturales-adrs)  
+> 📖 **ADR-011 (Docker + ECR + Lightsail + Caddy)**: [memory-bank/architecture/011-docker-ecr-lightsail-caddy.md](./memory-bank/architecture/011-docker-ecr-lightsail-caddy.md)
 
 ### **2.2. Descripción de componentes principales:**
 
@@ -646,7 +665,9 @@ adresles/
 │
 ├── infrastructure/
 │   ├── docker/
-│   │   └── docker-compose.yml         # PostgreSQL, Redis, DynamoDB Local
+│   │   ├── docker-compose.yml             # Dev local: PostgreSQL, Redis, DynamoDB Local
+│   │   ├── docker-compose.prod.yml        # Producción: api, worker, redis, caddy
+│   │   └── Caddyfile                      # Reverse proxy — backend.adresles.com HTTPS
 │   ├── iam/
 │   │   ├── policy-adresles-app-dev.json   # Política IAM mínima para adresles-app-dev
 │   │   └── policy-adresles-app-prod.json  # Política IAM mínima para adresles-app-prod
@@ -666,10 +687,17 @@ adresles/
 │   ├── specs/                         # Estándares, data-model
 │   └── changes/archive/              # Changes completados (CU-01, CU-02, T01-T03, CU03-A1-A6, CU03-B1-B4, infra)
 │
+├── apps/api/Dockerfile                # Multi-stage build (builder Alpine + runner Alpine + openssl)
+├── apps/worker/Dockerfile             # Multi-stage build (builder Alpine + runner Alpine + openssl)
 ├── .env                               # Desarrollo local (DynamoDB Local + Docker)
 ├── .env.dev                           # Dev en AWS (adresles-messages-dev, eu-west-1) — no comitear
 ├── .env.prod                          # Prod en AWS (adresles-messages-prod, eu-central-1) — no comitear
-├── .env.example                       # Plantilla de variables (sí comitear)
+├── .env.example                       # Plantilla de variables para desarrollo local (sí comitear)
+├── .env.prod.example                  # Plantilla de variables para producción (sí comitear)
+├── .dockerignore                      # Optimiza contexto de build Docker
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                 # CI/CD: ECR push + SSH deploy a Lightsail
 ├── package.json                       # Scripts: dev, build, db:generate, db:migrate, db:seed, dynamo:setup, dynamo:validate:dev/prod
 ├── pnpm-workspace.yaml
 ├── turbo.json

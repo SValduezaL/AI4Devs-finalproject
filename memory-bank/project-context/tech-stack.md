@@ -84,22 +84,31 @@
 
 ### Infraestructura y Deployment
 
-#### Servidor Dedicado (Konsole H)
+#### Backend — AWS Lightsail (producción)
 
-| Componente | Tecnología | Propósito |
-|------------|------------|-----------|
-| **Containerización** | Docker + Docker Compose | Orquestación de servicios |
-| **Reverse Proxy** | Traefik | Routing + SSL automático (Let's Encrypt) |
-| **Process Manager** | Docker (restart policies) | Gestión de procesos |
-| **Logs** | Docker logs | Centralización de logs |
+| Componente | Tecnología | Detalle |
+|------------|------------|---------|
+| **Compute** | AWS Lightsail `small_3_0` | Ubuntu 22.04, 2 GB RAM, $12/mes, IP estática `52.57.222.42` |
+| **Containerización** | Docker 29 + Docker Compose v5 | Stack: api, worker, redis, caddy |
+| **Reverse Proxy** | Caddy 2 (`caddy:2-alpine`) | HTTPS automático (Let's Encrypt), TLS 1.3 |
+| **Container Registry** | AWS ECR (`eu-central-1`) | `adresles-api` + `adresles-worker` (privado) |
+| **Process Manager** | Docker `restart: unless-stopped` | Alta disponibilidad automática |
 
 #### CDN/Hosting Frontend
 
-| Componente | Servicio | Propósito |
-|------------|----------|-----------|
-| **Dashboard Admin** | Vercel | Hosting Next.js (Free tier) |
+| Componente | Servicio | URL |
+|------------|----------|-----|
+| **Dashboard Admin** | Vercel (Free tier) | `simulator.adresles.com` |
 
-**Detalle completo**: Ver [Adresles_Business.md - Sección 4.6](../../Adresles_Business.md#46-diagrama-de-infraestructura-y-deployment)
+#### DNS
+
+| Subdominio | Tipo | Destino |
+|---|---|---|
+| `backend.adresles.com` | A | `52.57.222.42` (Lightsail) |
+| `simulator.adresles.com` | CNAME | `cname.vercel-dns.com` (Vercel) |
+| `adresles.com` | — | KonsoleH (WordPress, **sin modificar**) |
+
+**ADR**: Ver [ADR-011: Docker + ECR + Lightsail + Caddy](../architecture/011-docker-ecr-lightsail-caddy.md)
 
 ---
 
@@ -107,18 +116,22 @@
 
 | Herramienta | Propósito |
 |-------------|-----------|
-| **GitHub Actions** | Pipeline CI/CD |
-| **Docker Registry** | DockerHub (imágenes) |
-| **SSH Deploy** | Deployment al servidor dedicado |
+| **GitHub Actions** | Pipeline CI/CD (`.github/workflows/deploy.yml`) |
+| **AWS ECR** | Registry privado de imágenes Docker (`eu-central-1`) |
+| **SSH Deploy** | Push a Lightsail → `docker compose pull` + `up -d` |
 
-**Workflow**:
-1. Push a `main` → Trigger GitHub Actions
-2. Run tests (Jest + Playwright)
-3. Build Docker images
-4. Push to DockerHub
-5. SSH al servidor → Pull images → Restart containers
+**Workflow** (push a `main`):
+1. Login a ECR con credenciales `Cursor-Deployer`
+2. Build + push imágenes API y Worker a ECR
+3. SSH al servidor `52.57.222.42`
+4. `docker compose pull` + `docker compose up -d`
+5. `docker image prune -f`
 
-**Pipeline completo**: Ver [Adresles_Business.md - Sección 4.9](../../Adresles_Business.md#49-cicd-pipeline-github-actions)
+**Secrets necesarios en GitHub**:
+- `AWS_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+- `LIGHTSAIL_HOST`, `LIGHTSAIL_SSH_KEY`
+
+**Pipeline**: Ver [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml)
 
 ---
 
@@ -139,11 +152,18 @@ adresles/
 │
 ├── infrastructure/
 │   ├── docker/
-│   │   └── docker-compose.yml  # Redis 7, DynamoDB-local, PostgreSQL 15
+│   │   ├── docker-compose.yml       # Dev local: Redis 7, DynamoDB-local, PostgreSQL 15
+│   │   ├── docker-compose.prod.yml  # Producción: api, worker, redis, caddy
+│   │   └── Caddyfile                # Reverse proxy — backend.adresles.com HTTPS
 │   └── scripts/
 │
-└── .github/
-    └── workflows/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml       # CI/CD: ECR push + SSH deploy a Lightsail
+├── apps/api/Dockerfile      # Multi-stage build (builder + runner Alpine)
+├── apps/worker/Dockerfile   # Multi-stage build (builder + runner Alpine)
+├── .env.prod.example        # Plantilla de variables de producción
+└── .dockerignore            # Optimiza contexto Docker build
 ```
 
 > **Importante**: El Worker (`apps/worker/`) es un proceso **Node.js puro** sin NestJS. Instancia directamente `Worker` de BullMQ, `PrismaClient` desde `@adresles/prisma-db` y el cliente de OpenAI.
@@ -196,7 +216,7 @@ adresles/
 - ✅ **API Key + Secret** para plugins eCommerce
 - ✅ **Webhook signatures** (validación HMAC)
 - ✅ **JWT tokens** (Supabase Auth)
-- ✅ **HTTPS** forzado (Traefik + Let's Encrypt)
+- ✅ **HTTPS** forzado (Caddy + Let's Encrypt automático)
 - ✅ **Rate limiting** (Redis + middleware)
 - ✅ **Input validation** (class-validator + Zod)
 - ✅ **Secrets management** (GitHub Secrets + env vars)
@@ -283,6 +303,7 @@ Stack considerado:
 
 ---
 
-**Última actualización**: 2026-03-07 (revisión frontend completa)
+**Última actualización**: 2026-03-15 (infraestructura producción)  
 **Mantenido por**: Sergio  
-**Versiones actualizadas**: Prisma 5.22.0 (pinned), BullMQ 5.x, ESLint 9.x, @typescript-eslint 8.x, Next.js 16.1.6, React 19.2.3, Tailwind 4.x, sonner 2.x, cmdk 1.x
+**Versiones actualizadas**: Prisma 5.22.0 (pinned), BullMQ 5.x, ESLint 9.x, @typescript-eslint 8.x, Next.js 16.1.6, React 19.2.3, Tailwind 4.x, sonner 2.x, cmdk 1.x  
+**Cambio de infraestructura**: Konsole H + Traefik (plan) → AWS Lightsail + Caddy (real); DockerHub → AWS ECR
