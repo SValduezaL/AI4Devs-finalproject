@@ -12,7 +12,9 @@
     "db:seed": "node -r dotenv/config -r ts-node/register packages/prisma-db/seed.ts dotenv_config_path=.env",
     "db:studio": "pnpm --filter api exec prisma studio",
     "db:migrate:deploy": "pnpm --filter api exec prisma migrate deploy",
-    "dynamo:setup": "ts-node --require dotenv/config infrastructure/scripts/setup-dynamodb.ts dotenv_config_path=.env"
+    "dynamo:setup": "ts-node --require dotenv/config infrastructure/scripts/setup-dynamodb.ts dotenv_config_path=.env",
+    "dynamo:validate:dev": "node -r ts-node/register infrastructure/scripts/validate-dynamodb-aws.ts .env.dev",
+    "dynamo:validate:prod": "node -r ts-node/register infrastructure/scripts/validate-dynamodb-aws.ts .env.prod"
   },
   "devDependencies": {
     "@aws-sdk/client-dynamodb": "^3.995.0",

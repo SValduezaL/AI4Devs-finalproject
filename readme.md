@@ -217,32 +217,46 @@ adresles/
 | Servicio         | Propósito                                   | Configuración              |
 | ---------------- | ------------------------------------------- | -------------------------- |
 | **Supabase**     | PostgreSQL + Auth + RLS                     | Cuenta gratuita disponible |
-| **AWS DynamoDB** | Mensajes conversacionales (alta volumetría) | Modo pay-per-request       |
+| **AWS DynamoDB** | Mensajes conversacionales (alta volumetría) | Pay-per-request — `adresles-messages-dev` (eu-west-1) y `adresles-messages-prod` (eu-central-1) |
 | **OpenAI**       | API GPT-4 para conversaciones               | API Key requerida          |
 | **Google Maps**  | Geocoding y validación de direcciones       | API Key requerida          |
 | **Vercel**       | Hosting Dashboard Admin (opcional)          | Free tier disponible       |
 
-#### **Variables de Entorno (`.env`)**
+#### **Variables de Entorno**
 
-En desarrollo local hay **un único `.env` en la raíz** del monorepo. API, Worker, Prisma y web-admin lo usan como fuente de verdad.
+El proyecto usa **tres archivos `.env`** en la raíz del monorepo según el entorno. API, Worker, Prisma y web-admin los leen como fuente de verdad.
 
+| Archivo | Uso | DynamoDB |
+|---------|-----|----------|
+| `.env` | Desarrollo local (Docker) | DynamoDB Local (`http://localhost:8000`) |
+| `.env.dev` | Dev en AWS | `adresles-messages-dev` (eu-west-1) |
+| `.env.prod` | Producción en AWS | `adresles-messages-prod` (eu-central-1) |
+
+**Para activar en local:**
 1. Copiar la plantilla: `cp .env.example .env`
-2. Editar `.env` en la raíz y rellenar los valores (DB, Redis, AWS, OpenAI, Google Maps, `NEXT_PUBLIC_API_URL`).
+2. Editar `.env` en la raíz y rellenar los valores (DB, Redis, AWS, OpenAI, Google Maps, 
+`NEXT_PUBLIC_API_URL`).
 
-Ejemplo de variables (ver `.env.example` para la lista completa):
+Variables clave (ver `.env.example` para la lista completa):
 
 ```bash
 # Database (Prisma, API, Worker)
 DATABASE_URL="postgresql://..."
 REDIS_URL="redis://localhost:6379"
 # AWS / DynamoDB
-DYNAMODB_ENDPOINT="http://localhost:8000"
+AWS_REGION="eu-west-1"           # eu-central-1 en prod
+AWS_ACCESS_KEY_ID="local"          # IAM user adresles-app-dev / adresles-app-prod
+AWS_SECRET_ACCESS_KEY="local"
+DYNAMODB_TABLE_NAME="adresles-messages"    # adresles-messages-dev en dev y adresles-messages-prod en prod
+# DYNAMODB_ENDPOINT="http://localhost:8000"    # Solo en .env local (DynamoDB Local)
 # Worker
 OPENAI_API_KEY="sk-xxx"
 GOOGLE_MAPS_API_KEY="xxx"
 # Web Admin
 NEXT_PUBLIC_API_URL="http://localhost:3000"
 ```
+
+> **Seguridad**: Cada entorno tiene su propio IAM User (`adresles-app-dev`, `adresles-app-prod`) con permisos limitados exclusivamente a su tabla (`PutItem`, `GetItem`, `Query`, `UpdateItem`). Los archivos `.env.dev` y `.env.prod` **no deben comitearse** al repositorio.
 
 #### **Instalación**
 
@@ -262,6 +276,10 @@ docker compose -f infrastructure/docker/docker-compose.yml up -d
 
 # 5. Configurar DynamoDB Local (tabla adresles-messages)
 pnpm dynamo:setup
+
+# 5b. [Opcional] Validar conexión a DynamoDB en AWS
+pnpm dynamo:validate:dev    # Verifica escritura/lectura en adresles-messages-dev (eu-west-1)
+pnpm dynamo:validate:prod   # Verifica escritura/lectura en adresles-messages-prod (eu-central-1)
 
 # 6. Generar cliente Prisma (packages/prisma-db)
 pnpm db:generate
@@ -510,17 +528,32 @@ C4Container
 
 **AWS DynamoDB**  
 **Propósito**: Mensajes conversacionales (alta volumetría, TTL automático)  
-**Tablas**:
+**Tabla implementada**: `adresles-messages` (local) / `adresles-messages-dev` (AWS eu-west-1) / `adresles-messages-prod` (AWS eu-central-1)
 
-- `Conversations`: Metadata de conversaciones (PK: conversation_id)
-- `Messages`: Mensajes individuales (PK: conversation_id, SK: ulid)
-- `AuditLog`: Logs de auditoría con TTL
+| Atributo | Tipo | Rol |
+|----------|------|-----|
+| `conversationId` | String | **Partition Key (PK)** — UUID de la conversación |
+| `messageId` | String | **Sort Key (SK)** — timestamp dinámico o valor reservado `__state__` |
+| `role` | String | `'system'` / `'user'` / `'assistant'` |
+| `content` | String | Texto del mensaje |
+| `timestamp` | String | ISO 8601 |
+| `expiresAt` | Number | **TTL automático** (Unix timestamp, 90 días) |
+| `state` | String | JSON del estado del Worker (solo cuando `messageId = '__state__'`) |
+
+**Entornos y acceso**:
+
+| Entorno | Tabla | Región | IAM User |
+|---------|-------|--------|----------|
+| Local (Docker) | `adresles-messages` | — | credenciales ficticias |
+| Dev | `adresles-messages-dev` | `eu-west-1` | `adresles-app-dev` |
+| Prod | `adresles-messages-prod` | `eu-central-1` | `adresles-app-prod` |
 
 **Ventajas**:
 
-- TTL nativo (90 días para mensajes, configurable)
+- TTL nativo (90 días para mensajes, configurable en código)
 - Alto throughput para escrituras
 - Pay-per-request (coste optimizado)
+- Mínimo privilegio: cada IAM User solo accede a su tabla
 
 > 📖 **ADR Base de Datos**: [memory-bank/architecture/002-supabase-dynamodb.md](./memory-bank/architecture/002-supabase-dynamodb.md)
 
@@ -571,7 +604,7 @@ adresles/
 │   │   │   ├── services/
 │   │   │   │   └── address.service.ts
 │   │   │   ├── dynamodb/
-│   │   │   │   └── dynamodb.service.ts         # Tabla adresles-messages (TTL 90d)
+│   │   │   │   └── dynamodb.service.ts         # Tabla configurada por DYNAMODB_TABLE_NAME (TTL 90d)
 │   │   │   ├── redis-publisher.ts               # Publica en Redis para SSE
 │   │   │   └── main.ts
 │   │   └── package.json              # prisma.schema → @adresles/prisma-db
@@ -614,8 +647,12 @@ adresles/
 ├── infrastructure/
 │   ├── docker/
 │   │   └── docker-compose.yml         # PostgreSQL, Redis, DynamoDB Local
+│   ├── iam/
+│   │   ├── policy-adresles-app-dev.json   # Política IAM mínima para adresles-app-dev
+│   │   └── policy-adresles-app-prod.json  # Política IAM mínima para adresles-app-prod
 │   └── scripts/
-│       └── setup-dynamodb.ts
+│       ├── setup-dynamodb.ts              # Crea la tabla en DynamoDB Local
+│       └── validate-dynamodb-aws.ts       # Valida conexión y escritura en AWS
 │
 ├── memory-bank/                       # Contexto persistente
 │   ├── project-context/               # overview, tech-stack, domain-glossary
@@ -629,7 +666,11 @@ adresles/
 │   ├── specs/                         # Estándares, data-model
 │   └── changes/archive/              # Changes completados (CU-01, CU-02, T01-T03, CU03-A1-A6, CU03-B1-B4, infra)
 │
-├── package.json                       # Scripts: dev, build, db:generate, db:migrate, db:seed, dynamo:setup
+├── .env                               # Desarrollo local (DynamoDB Local + Docker)
+├── .env.dev                           # Dev en AWS (adresles-messages-dev, eu-west-1) — no comitear
+├── .env.prod                          # Prod en AWS (adresles-messages-prod, eu-central-1) — no comitear
+├── .env.example                       # Plantilla de variables (sí comitear)
+├── package.json                       # Scripts: dev, build, db:generate, db:migrate, db:seed, dynamo:setup, dynamo:validate:dev/prod
 ├── pnpm-workspace.yaml
 ├── turbo.json
 ├── Adresles_Business.md
@@ -1009,8 +1050,8 @@ erDiagram
         uuid id PK
         uuid store_id FK
         uuid user_id FK
-        string external_order_id
-        string external_order_number
+        string external_order_id "NOT NULL — fuente única de verdad"
+        string external_order_number "legacy nullable"
         decimal total_amount
         string currency
         decimal fee_percentage
@@ -1251,8 +1292,8 @@ Representa un pedido realizado en una tienda online.
 | `id`                    | UUID          | PK                      | Identificador único interno de Adresles                                         |
 | `store_id`              | UUID          | FK → store, NOT NULL    | Tienda origen del pedido                                                        |
 | `user_id`               | UUID          | FK → user, NOT NULL     | Comprador (siempre el que paga)                                                 |
-| `external_order_id`     | VARCHAR(100)  | NOT NULL                | ID del pedido en el sistema eCommerce                                           |
-| `external_order_number` | VARCHAR(50)   |                         | Número visible del pedido para el usuario (ej: #12345)                          |
+| `external_order_id`     | VARCHAR(100)  | NOT NULL                | ID del pedido en el eCommerce. **Fuente única de verdad** para UI, búsqueda y sort. Generado por `ExternalOrderIdService` si no viene en el payload |
+| `external_order_number` | VARCHAR(50)   | ⚠️ Legacy (nullable)    | Campo sin uso activo desde `external-order-id-coherence` (2026-03-13). No utilizar en código nuevo |
 | `total_amount`          | DECIMAL(12,2) | NOT NULL                | Importe total del pedido                                                        |
 | `currency`              | VARCHAR(3)    | NOT NULL                | Moneda (ISO 4217: EUR, USD, GBP...)                                             |
 | `fee_percentage`        | DECIMAL(5,2)  | NOT NULL                | % de fee aplicado (2.5% - 5%)                                                   |

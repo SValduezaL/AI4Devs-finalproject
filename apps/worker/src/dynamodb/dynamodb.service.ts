@@ -6,7 +6,7 @@ import {
   GetCommand,
 } from '@aws-sdk/lib-dynamodb';
 
-const TABLE_NAME = 'adresles-messages';
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME ?? 'adresles-messages';
 const TTL_DAYS = 90;
 
 export interface ConversationMessage {

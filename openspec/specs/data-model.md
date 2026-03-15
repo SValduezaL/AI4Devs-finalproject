@@ -140,8 +140,8 @@ Representa pedidos realizados en tiendas eCommerce integradas.
 - `id`: UUID (PK)
 - `store_id`: UUID (FK → store, NOT NULL)
 - `user_id`: UUID (FK → user, NOT NULL)
-- `external_order_id`: VARCHAR(100) (NOT NULL) - ID en el eCommerce
-- `external_order_number`: VARCHAR(50)
+- `external_order_id`: VARCHAR(100) (NOT NULL) - ID en el eCommerce. **Fuente única de verdad** para referenciar el pedido (UI, búsqueda, sort, LLM). Generado automáticamente por `ExternalOrderIdService` con formato realista por plataforma si no viene en el payload
+- `external_order_number`: VARCHAR(50) — ⚠️ **Campo legacy** (nullable). Sin uso activo desde `external-order-id-coherence` (2026-03-13). No utilizar en código nuevo
 - `total_amount`: DECIMAL(12,2) (NOT NULL)
 - `currency`: VARCHAR(3) (NOT NULL)
 - `fee_percentage`: DECIMAL(5,2) (NOT NULL)

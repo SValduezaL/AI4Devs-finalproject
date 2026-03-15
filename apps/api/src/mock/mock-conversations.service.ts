@@ -4,7 +4,7 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand } from '@aws-sdk/lib-d
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 
-const TABLE_NAME = 'adresles-messages';
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME ?? 'adresles-messages';
 const TTL_DAYS = 90;
 
 export interface DynamoMessage {

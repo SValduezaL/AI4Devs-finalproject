@@ -1,6 +1,6 @@
 # Patrones de Validación — Adresles Backend
 
-> **Última actualización**: 2026-02-24  
+> **Última actualización**: 2026-03-13  
 > **Origen**: Bug en `AdminController` — Query DTO sin decoradores → HTTP 400  
 > **Estándar relacionado**: [`/.cursor/rules/backend-standards.mdc` — Patrones de Validación](../../.cursor/rules/backend-standards.mdc)
 
@@ -148,8 +148,10 @@ export class AdminService {
   }
 
   private buildOrderBy(sortBy: string | undefined, dir: 'asc' | 'desc') {
-    const refSort = { externalOrderNumber: { sort: dir, nulls: 'last' as const } };
+    // externalOrderId es NOT NULL → sin nulls: 'last'
+    const refSort = { externalOrderId: dir };
     switch (sortBy) {
+      case 'ref':   return [refSort];
       case 'store': return [{ store: { name: dir } }, refSort]; // con subsort
       case 'user':  return [{ user: { firstName: dir } }, { user: { lastName: dir } }];
       default:      return [{ webhookReceivedAt: dir }];
@@ -160,7 +162,7 @@ export class AdminService {
 
 > El método privado permite testearlo directamente llamando a `getOrders` y verificando el argumento de `findMany` con `toHaveBeenCalledWith(expect.objectContaining({ orderBy: [...] }))`.
 
-> **Nulls al final**: Para campos opcionales (ej. `externalOrderNumber`), usar `{ sort: dir, nulls: 'last' }` en lugar de `dir` directamente.
+> **Nulls al final**: Solo para campos **nullable** (ej. `user.firstName`, `lastInteractionAt`), usar `{ sort: dir, nulls: 'last' }`. Para campos NOT NULL (ej. `externalOrderId`, `webhookReceivedAt`), usar `dir` directamente sin `nulls`.
 
 ### 7. DTO Anidado — `@ValidateNested` + `@Type` + `@IsObject`
 

@@ -297,8 +297,39 @@ Según [Adresles_Business.md - Sección 3.4](../../Adresles_Business.md#34-polí
 - RLS multi-tenant crítico para seguridad → Supabase ideal
 - TTL automático de DynamoDB simplifica política de retención
 
+### 2026-03-15: Revisión — Esquema real implementado vs diseño original
+
+El esquema de DynamoDB documentado en la sección de Implementación refleja el **diseño inicial** (fase de arquitectura). La implementación real difiere:
+
+**Esquema real implementado** en `apps/worker/src/dynamodb/dynamodb.service.ts`:
+
+```typescript
+// Tabla: adresles-messages (local) / adresles-messages-dev (AWS) / adresles-messages-prod (AWS)
+{
+  conversationId: string,  // Partition Key — UUID de la conversación
+  messageId: string,       // Sort Key — timestamp dinámico o '__state__' (estado del Worker)
+  role: 'system' | 'user' | 'assistant',
+  content: string,
+  timestamp: string,       // ISO 8601
+  expiresAt: number,       // TTL Unix timestamp (90 días)
+  state?: string,          // JSON del estado de la máquina de fases (solo ítem '__state__')
+}
+```
+
+**Diferencias respecto al diseño original**:
+- SK es `messageId` (no `timestamp` como preveía el ADR)
+- No se implementaron los GSIs (`user_id-timestamp-index`, `order_id-timestamp-index`)
+- La tabla tiene doble uso: mensajes + estado del Worker (ítem especial `messageId = '__state__'`)
+- El atributo TTL se llama `expiresAt` (no `ttl`)
+- `@aws-sdk/lib-dynamodb` (DocumentClient) sustituye al uso directo de `@aws-sdk/client-dynamodb`
+
+**Infraestructura en AWS** (migrado 2026-03-15):
+- Se crearon dos tablas en AWS real: `adresles-messages-dev` (eu-west-1) y `adresles-messages-prod` (eu-central-1)
+- IAM Users con mínimo privilegio: `adresles-app-dev` y `adresles-app-prod`
+- Ver **[ADR-010](./010-dynamodb-aws-multienv.md)** para la decisión de infraestructura de multi-entorno
+
 ---
 
 **Creado por**: Sergio  
-**Última actualización**: 2026-02-07  
+**Última actualización**: 2026-03-15  
 **Próxima revisión**: Tras primeros 1000 usuarios en producción (validar costos reales)

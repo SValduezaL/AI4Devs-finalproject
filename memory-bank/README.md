@@ -1,8 +1,8 @@
 # Memory Bank - Adresles
 
 > **Contexto persistente del proyecto para sesiones de IA**  
-> **Última actualización**: 2026-03-13  
-> ✅ **Change completado**: external-order-id-coherence — `externalOrderId` como única referencia activa (UI, búsqueda, sort, LLM); `ExternalOrderIdService` con generación por plataforma; `external_order_id` opcional en mock DTO; 210 tests pasando (161 API + 49 Worker)
+> **Última actualización**: 2026-03-15  
+> ✅ **Sesión completada**: dynamodb-aws-migration — DynamoDB Local migrado a AWS real (Dev: eu-west-1, Prod: eu-central-1); IAM Users con mínimo privilegio; `DYNAMODB_TABLE_NAME` configurable por entorno; validación end-to-end confirmada; ADR-010 creado
 
 ## 📖 Inicio Rápido
 
@@ -27,6 +27,7 @@ Decisiones clave que guían el desarrollo del proyecto:
 | [007](./architecture/007-shared-types-package.md) | `packages/shared-types` — Fuente Única de Tipos Compartidos | ✅ Aceptada | 2026-02-28 |
 | [008](./architecture/008-prisma-schema-worker-opcion-c.md) | Worker apunta al schema Prisma del API (Opción C, stepping stone) | ✅ Aceptada | 2026-03-02 |
 | [009](./architecture/009-prisma-db-package.md) | `packages/prisma-db` — Fuente Única del Schema Prisma (Opción B) | ✅ Aceptada | 2026-03-02 |
+| [010](./architecture/010-dynamodb-aws-multienv.md) | DynamoDB en AWS con Entornos Separados e IAM de Mínimo Privilegio | ✅ Aceptada | 2026-03-15 |
 
 ## 🎨 Patrones y Convenciones
 
@@ -94,6 +95,7 @@ Pendiente de documentar:
 | [2026-03-09](./sessions/2026-03-09-fix-information-journey-confirmation-message.md) | fix-information-journey-confirmation-message — Primer mensaje INFORMATION (compra tradicional) — Completado | ✅ Completado (10/10 tareas, 14 tests) |
 | [2026-03-12](./sessions/2026-03-12-admin-addresses-page.md) | admin-addresses-page — Página `/addresses` en Dashboard Admin (tabla, sort, búsqueda, filtro Favorita) — Completado | ✅ Completado (29/29 tareas, 96 tests) |
 | [2026-03-13](./sessions/2026-03-13-external-order-id-coherence.md) | external-order-id-coherence — `externalOrderId` como fuente única; `ExternalOrderIdService` por plataforma; DTO opcional — Completado | ✅ Completado (39/39 tareas, 210 tests) |
+| [2026-03-15](./sessions/2026-03-15-dynamodb-aws-migration.md) | dynamodb-aws-migration — DynamoDB Local → AWS real (Dev eu-west-1 + Prod eu-central-1); IAM mínimo privilegio; `DYNAMODB_TABLE_NAME` configurable; validación end-to-end — Completado | ✅ Completado (infraestructura) |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
@@ -134,7 +136,8 @@ memory-bank/
 │   ├── 006-sse-redis-pubsub.md
 │   ├── 007-shared-types-package.md
 │   ├── 008-prisma-schema-worker-opcion-c.md
-│   └── 009-prisma-db-package.md
+│   ├── 009-prisma-db-package.md
+│   └── 010-dynamodb-aws-multienv.md
 │
 ├── patterns/                   # Patrones y convenciones
 │   ├── validation-patterns.md       # DTOs, class-validator, supertest
@@ -176,7 +179,7 @@ Este memory-bank permite a la IA:
 
 ---
 
-**Última revisión**: 2026-03-13  
+**Última revisión**: 2026-03-15  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: external-order-id-coherence completado — `externalOrderId` consolidado como fuente única de verdad (elimina ambigüedad con `externalOrderNumber`); nuevo `ExternalOrderIdService` con generación realista por plataforma (WooCommerce/Shopify/PrestaShop); `external_order_id` opcional en DTO (backend lo genera si no viene); 39 tareas, 210 tests; glosario y sesión actualizados.  
+**Cambios recientes**: dynamodb-aws-migration completado — DynamoDB Local migrado a AWS real con dos entornos aislados (Dev eu-west-1, Prod eu-central-1); IAM Users `adresles-app-dev` y `adresles-app-prod` con mínimo privilegio (solo 4 acciones sobre su tabla); `DYNAMODB_TABLE_NAME` configurable por variable de entorno; script de validación `validate-dynamodb-aws.ts`; ADR-010 creado; ADR-002 actualizado con esquema real; readme.md del proyecto actualizado.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo
