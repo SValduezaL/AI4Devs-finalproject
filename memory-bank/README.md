@@ -2,7 +2,7 @@
 
 > **Contexto persistente del proyecto para sesiones de IA**  
 > **Última actualización**: 2026-03-16  
-> ✅ **Sesión completada**: chat-markdown-rendering — Markdown en burbujas de chat; `react-markdown` + `remark-breaks` en frontend; 4 builders del Worker actualizados; patrón `chat-markdown-patterns.md` documentado
+> ✅ **Sesión completada**: simulate-modal-smart-defaults — Defaults inteligentes en modal de simulación; auto-productos/dirección al abrir; filtro pills de registro en `UserCombobox`; patrones 7-9 documentados en `frontend-form-patterns.md`
 
 ## 📖 Inicio Rápido
 
@@ -102,6 +102,7 @@ Pendiente de documentar:
 | [2026-03-15](./sessions/2026-03-15-production-deployment.md) | production-deployment — MVP en producción: Lightsail + ECR + Caddy + Vercel; CI/CD GitHub Actions; `backend.adresles.com` + `simulator.adresles.com` — Completado | ✅ Completado (producción live) |
 | [2026-03-16](./sessions/2026-03-16-fix-duplicate-user-messages.md) | fix-duplicate-user-messages — Mensajes de usuario duplicados en historial; solo API persiste; Worker no reescribe; patrón single-writer documentado | ✅ Completado (3/3 tareas) |
 | [2026-03-16](./sessions/2026-03-16-chat-markdown-rendering.md) | chat-markdown-rendering — Renderizado Markdown en burbujas de chat; `react-markdown` + `remark-breaks`; 4 builders del Worker actualizados; criterio D5 documentado | ✅ Completado (21/21 tareas) |
+| [2026-03-16](./sessions/2026-03-16-simulate-modal-smart-defaults.md) | simulate-modal-smart-defaults — Defaults inteligentes en modal `/simulate`; lazy initializer productos; auto-fill condicional direcciones; pills filtro registro en `UserCombobox` | ✅ Completado (13/13 tareas impl. + build/lint ✓) |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
@@ -189,5 +190,5 @@ Este memory-bank permite a la IA:
 
 **Última revisión**: 2026-03-16  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: chat-markdown-rendering — Markdown en burbujas de chat implementado; `react-markdown` + `remark-breaks` en frontend; 4 builders del Worker actualizados; patrón `chat-markdown-patterns.md` y sesión `2026-03-16-chat-markdown-rendering.md` añadidos; `tech-stack.md` actualizado con nuevas dependencias.  
+**Cambios recientes**: simulate-modal-smart-defaults — Defaults inteligentes en modal `/simulate`; lazy initializer + auto-fill condicional + pills de filtro; patrones 7-9 añadidos a `frontend-form-patterns.md`; sesión `2026-03-16-simulate-modal-smart-defaults.md` creada.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo

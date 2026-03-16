@@ -38,8 +38,23 @@ interface UserComboboxProps {
   onChange: (v: UserComboboxValue | null) => void;
 }
 
+type RegistrationFilter = 'all' | 'registered' | 'unregistered';
+
+const REGISTRATION_PILLS: { value: RegistrationFilter; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'registered', label: 'Adresles' },
+  { value: 'unregistered', label: 'No Adresles' },
+];
+
 export function UserCombobox({ users, label, value, onChange }: UserComboboxProps) {
   const [open, setOpen] = useState(false);
+  const [registrationFilter, setRegistrationFilter] = useState<RegistrationFilter>('all');
+
+  const filteredUsers = users.filter((user) => {
+    if (registrationFilter === 'registered') return user.isRegistered;
+    if (registrationFilter === 'unregistered') return !user.isRegistered;
+    return true;
+  });
 
   const isFromDb = !!value?.existingUserId;
   const isReadonly = isFromDb;
@@ -68,7 +83,26 @@ export function UserCombobox({ users, label, value, onChange }: UserComboboxProp
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label className="text-sm font-medium">{label}</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-medium">{label}</Label>
+          <div className="flex gap-1">
+            {REGISTRATION_PILLS.map(({ value: filterValue, label: pillLabel }) => (
+              <button
+                key={filterValue}
+                type="button"
+                onClick={() => setRegistrationFilter(filterValue)}
+                className={cn(
+                  'px-2 py-0.5 rounded-full text-xs border transition-colors',
+                  registrationFilter === filterValue
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-transparent text-muted-foreground border-muted hover:border-foreground hover:text-foreground',
+                )}
+              >
+                {pillLabel}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Combobox de búsqueda */}
         <Popover open={open} onOpenChange={setOpen}>
@@ -91,7 +125,7 @@ export function UserCombobox({ users, label, value, onChange }: UserComboboxProp
               <CommandList>
                 <CommandEmpty>Sin resultados.</CommandEmpty>
                 <CommandGroup>
-                  {users.map((user) => {
+                  {filteredUsers.map((user) => {
                     const display = [user.firstName, user.lastName].filter(Boolean).join(' ') || '(sin nombre)';
                     const phone = user.phone?.e164 ?? '';
                     return (

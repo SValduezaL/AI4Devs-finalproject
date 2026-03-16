@@ -76,7 +76,9 @@ export function OrderConfigModal({
   const [buyerRegisteredEcommerce, setBuyerRegisteredEcommerce] = useState(false);
   const [buyerHasEcommerceAddress, setBuyerHasEcommerceAddress] = useState(false);
   const [ecommerceAddress, setEcommerceAddress] = useState<AddressState>(EMPTY_ADDRESS);
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>(() =>
+    getRandomOrder().items.map((item) => ({ ...item })),
+  );
   const [currency, setCurrency] = useState('EUR');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -202,7 +204,7 @@ export function OrderConfigModal({
     setBuyerRegisteredEcommerce(false);
     setBuyerHasEcommerceAddress(false);
     setEcommerceAddress(EMPTY_ADDRESS);
-    setOrderItems([]);
+    setOrderItems(getRandomOrder().items.map((item) => ({ ...item })));
     setCurrency('EUR');
   }
 
@@ -257,7 +259,15 @@ export function OrderConfigModal({
                   type="button"
                   variant={mode === 'TRADICIONAL' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setMode('TRADICIONAL')}
+                  onClick={() => {
+                    setMode('TRADICIONAL');
+                    const isEmpty =
+                      !deliveryAddress.line1 &&
+                      !deliveryAddress.postalCode &&
+                      !deliveryAddress.city &&
+                      !deliveryAddress.country;
+                    if (isEmpty) handleRandomAddress(setDeliveryAddress);
+                  }}
                   className="flex-1"
                 >
                   TRADICIONAL
@@ -347,7 +357,16 @@ export function OrderConfigModal({
                         checked={buyerHasEcommerceAddress}
                         onCheckedChange={(v) => {
                           setBuyerHasEcommerceAddress(v);
-                          if (!v) setEcommerceAddress(EMPTY_ADDRESS);
+                          if (v) {
+                            const isEmpty =
+                              !ecommerceAddress.line1 &&
+                              !ecommerceAddress.postalCode &&
+                              !ecommerceAddress.city &&
+                              !ecommerceAddress.country;
+                            if (isEmpty) handleRandomAddress(setEcommerceAddress);
+                          } else {
+                            setEcommerceAddress(EMPTY_ADDRESS);
+                          }
                         }}
                       />
                       <Label htmlFor="has-ecommerce-address" className="text-sm">
@@ -393,7 +412,7 @@ export function OrderConfigModal({
                 </Button>
               </div>
 
-              {orderItems.length > 0 ? (
+              {orderItems.length > 0 && (
                 <div className="space-y-2">
                   <div className="grid grid-cols-[1fr_80px_80px] gap-2 text-xs text-muted-foreground font-medium px-1">
                     <span>Nombre</span>
@@ -439,10 +458,6 @@ export function OrderConfigModal({
                     </span>
                   </div>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-3">
-                  Pulsa &quot;Productos aleatorios&quot; o añade ítems manualmente.
-                </p>
               )}
             </div>
 

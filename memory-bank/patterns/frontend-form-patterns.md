@@ -1,7 +1,7 @@
 # Patrones de Formularios Frontend (web-admin)
 
 > **Origen**: CU03-A5 — `OrderConfigModal` + `UserCombobox`  
-> **Última actualización**: 2026-02-28
+> **Última actualización**: 2026-03-16
 
 ---
 
@@ -254,11 +254,202 @@ CU03-A6 — `SimulationChat` se reutilizaba entre simulaciones, lo que hacía qu
 
 ---
 
+---
+
+## 7. Lazy Initializer para Estado Pre-Rellenado en Modales
+
+### Cuándo usar
+
+Cuando un modal (o componente con estado complejo) debe abrirse con datos ya pre-rellenados (valores aleatorios, últimos valores usados, etc.) en lugar de un estado vacío.
+
+### Problema
+
+Usar `useState([])` inicializa el estado vacío y luego requiere lógica adicional (`useEffect` + `open` como dependencia, o un botón manual) para pre-rellenar. El `useEffect` es propenso a ciclos de renderizado si no se gestiona bien.
+
+### Solución: Lazy Initializer
+
+```typescript
+// ❌ MAL: estado vacío + useEffect para pre-rellenar
+const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+useEffect(() => { if (open) handleRandomProducts(); }, [open]);
+
+// ✅ BIEN: lazy initializer calcula el valor inicial en el primer render
+const [orderItems, setOrderItems] = useState<OrderItem[]>(() =>
+  getRandomOrder().items.map((item) => ({ ...item })),
+);
+```
+
+### Combinación con `handleReset()`
+
+El lazy initializer solo se ejecuta en el primer render. Para que el estado se re-inicialice en cada apertura del modal (tras cierre y reapertura), el `handleReset()` debe replicar la misma lógica:
+
+```typescript
+function handleReset() {
+  // ... otros campos ...
+  // Regenera datos aleatorios en cada reset, igual que el lazy initializer
+  setOrderItems(getRandomOrder().items.map((item) => ({ ...item })));
+}
+```
+
+### Regla
+
+> Si el modal cierra y reabre (vía `onClose()` + `handleReset()`), ambos puntos de inicialización — lazy initializer y `handleReset()` — deben ser consistentes.
+
+### Origen
+
+`simulate-modal-smart-defaults` — `OrderConfigModal` (`order-config-modal.tsx:79-81`, `207`)
+
+---
+
+## 8. Auto-Fill Condicional en Transiciones de Estado de Formulario
+
+### Cuándo usar
+
+Cuando un cambio de modo, toggle o switch debe pre-rellenar un campo con datos por defecto **solo si estaba vacío**, conservando cualquier dato que el usuario ya hubiera introducido.
+
+### Problema
+
+Auto-rellenar siempre sobreescribe el trabajo del usuario. No auto-rellenar nunca obliga a clicks manuales innecesarios. La solución es verificar si el campo está vacío antes de auto-rellenar.
+
+### Patrón
+
+```typescript
+// Definición de "vacío" para un AddressState (campos obligatorios)
+const isEmpty = !addr.line1 && !addr.postalCode && !addr.city && !addr.country;
+
+// onClick de botón de modo o onCheckedChange de switch
+onClick={() => {
+  setMode('TRADICIONAL');
+  const isEmpty =
+    !deliveryAddress.line1 &&
+    !deliveryAddress.postalCode &&
+    !deliveryAddress.city &&
+    !deliveryAddress.country;
+  if (isEmpty) handleRandomAddress(setDeliveryAddress);
+}}
+```
+
+```typescript
+// Switch con tres casos: activar-vacío / activar-relleno / desactivar
+onCheckedChange={(v) => {
+  setBuyerHasEcommerceAddress(v);
+  if (v) {
+    const isEmpty = !ecommerceAddress.line1 && !ecommerceAddress.postalCode &&
+                    !ecommerceAddress.city && !ecommerceAddress.country;
+    if (isEmpty) handleRandomAddress(setEcommerceAddress);
+    // Si no está vacío: se conservan los datos existentes (sin else)
+  } else {
+    setEcommerceAddress(EMPTY_ADDRESS); // desactivar siempre limpia
+  }
+}}
+```
+
+### Regla
+
+> "Vacío" se define por los campos **obligatorios** del objeto, no por todos sus campos. Un campo con solo `line2` (opcional) relleno y los obligatorios vacíos sigue siendo "vacío" a efectos de auto-fill.
+
+### Origen
+
+`simulate-modal-smart-defaults` — `OrderConfigModal` (`order-config-modal.tsx:262-269`, `360-369`)
+
+---
+
+## 9. Filtro Local con Pills en Componente Combobox Reutilizable
+
+### Cuándo usar
+
+Cuando un combobox reutilizable en múltiples instancias necesita filtrar su lista por una categoría discreta (3-5 opciones), y cada instancia debe mantener su propio estado de filtro de forma independiente.
+
+### Patrón
+
+```typescript
+// 1. Tipo de filtro y constante de opciones fuera del componente
+type RegistrationFilter = 'all' | 'registered' | 'unregistered';
+
+const REGISTRATION_PILLS: { value: RegistrationFilter; label: string }[] = [
+  { value: 'all', label: 'Todos' },
+  { value: 'registered', label: 'Adresles' },
+  { value: 'unregistered', label: 'No Adresles' },
+];
+
+// 2. Estado local al componente (no prop del padre)
+export function UserCombobox({ users, label, value, onChange }: UserComboboxProps) {
+  const [registrationFilter, setRegistrationFilter] = useState<RegistrationFilter>('all');
+
+  // 3. Array derivado sincrónico (sin useMemo para listas pequeñas)
+  const filteredUsers = users.filter((user) => {
+    if (registrationFilter === 'registered') return user.isRegistered;
+    if (registrationFilter === 'unregistered') return !user.isRegistered;
+    return true;
+  });
+  // ...
+}
+```
+
+```tsx
+{/* 4. Pills alineadas a la derecha del label */}
+<div className="flex items-center justify-between">
+  <Label className="text-sm font-medium">{label}</Label>
+  <div className="flex gap-1">
+    {REGISTRATION_PILLS.map(({ value: filterValue, label: pillLabel }) => (
+      <button
+        key={filterValue}
+        type="button"
+        onClick={() => setRegistrationFilter(filterValue)}
+        className={cn(
+          'px-2 py-0.5 rounded-full text-xs border transition-colors',
+          registrationFilter === filterValue
+            ? 'bg-foreground text-background border-foreground'
+            : 'bg-transparent text-muted-foreground border-muted hover:border-foreground hover:text-foreground',
+        )}
+      >
+        {pillLabel}
+      </button>
+    ))}
+  </div>
+</div>
+```
+
+### Comportamiento de Reset
+
+El filtro se resetea a `'all'` **automáticamente** cuando el componente se desmonta. Si el componente padre (modal) cierra y reabre, el combobox se desmonta y remonta con estado inicial limpio. No se necesita lógica de reset explícita en el padre.
+
+### Combinación con Búsqueda de Texto (cmdk)
+
+El filtro por pills actúa como pre-filtro del array antes de pasarlo a `CommandGroup`. La búsqueda por texto de cmdk opera sobre el subconjunto ya filtrado, combinándose de forma natural:
+
+```tsx
+{/* cmdk busca dentro de filteredUsers, no del array completo */}
+<CommandGroup>
+  {filteredUsers.map((user) => (
+    <CommandItem key={user.id} value={`${display} ${phone}`} onSelect={...}>
+      ...
+    </CommandItem>
+  ))}
+</CommandGroup>
+```
+
+### Regla
+
+> Usar estado local (no prop del padre) cuando:
+> 1. El filtro es puramente presentacional
+> 2. Cada instancia del componente debe tener su filtro independiente
+> 3. El reset al cerrar el contenedor padre es el comportamiento esperado
+>
+> Pasar el filtro como prop del padre solo si el padre necesita saber qué está filtrado para lógica de negocio.
+
+### Origen
+
+`simulate-modal-smart-defaults` — `UserCombobox` (`user-combobox.tsx:41-57`, `86-105`)
+
+---
+
 ## Referencias
 
-- **`apps/web-admin/src/components/simulate/order-config-modal.tsx`** — Implementación de referencia (patrones 1 y 3)
-- **`apps/web-admin/src/components/simulate/user-combobox.tsx`** — Implementación de referencia (patrones 2 y 4)
+- **`apps/web-admin/src/components/simulate/order-config-modal.tsx`** — Implementación de referencia (patrones 1, 3, 7, 8)
+- **`apps/web-admin/src/components/simulate/user-combobox.tsx`** — Implementación de referencia (patrones 2, 4, 9)
 - **`apps/web-admin/src/lib/simulate-data.ts`** — Catálogo de direcciones ficticias y `toAddressPayload`
 - **`apps/web-admin/src/components/simulate/simulation-chat.tsx`** — Implementación de referencia (patrones 4 y 6)
 - **`apps/web-admin/src/components/chat/chat-bubble.tsx`** — Implementación de referencia (patrón 5)
 - **Sesión**: [2026-02-28-cu03-a5-order-config-modal.md](../sessions/2026-02-28-cu03-a5-order-config-modal.md)
+- **Sesión**: [2026-03-16-simulate-modal-smart-defaults.md](../sessions/2026-03-16-simulate-modal-smart-defaults.md)
