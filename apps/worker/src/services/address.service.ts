@@ -259,24 +259,24 @@ export function buildBuildingDetailsRequest(pending: PendingAddress, language: s
   const addr = buildAddressDisplayText(pending);
 
   if (language === 'English') {
-    return `I validated your address:\n📍 ${addr}\n\nThis looks like it could be an apartment building. Could you tell me the floor and/or door number? If it's not needed (it's a house or local), just say "not needed".`;
+    return `I validated your address:\n📍 **${addr}**\n\nThis looks like it could be an apartment building. Could you tell me the floor and/or door number? If it's not needed (it's a house or local), just say "not needed".`;
   }
   if (language === 'French') {
-    return `J'ai validé votre adresse :\n📍 ${addr}\n\nCela ressemble à un immeuble. Pouvez-vous m'indiquer l'étage et/ou la porte ? Si ce n'est pas nécessaire (maison ou local), dites "pas nécessaire".`;
+    return `J'ai validé votre adresse :\n📍 **${addr}**\n\nCela ressemble à un immeuble. Pouvez-vous m'indiquer l'étage et/ou la porte ? Si ce n'est pas nécessaire (maison ou local), dites "pas nécessaire".`;
   }
-  return `He validado tu dirección:\n📍 ${addr}\n\nParece que podría ser un edificio. ¿Puedes indicarme el piso y/o la puerta? Si no hace falta (es una casa o local), dime "no hace falta".`;
+  return `He validado tu dirección:\n📍 **${addr}**\n\nParece que podría ser un edificio. ¿Puedes indicarme el piso y/o la puerta? Si no hace falta (es una casa o local), dime "no hace falta".`;
 }
 
 export function buildConfirmationRequest(pending: PendingAddress, language: string): string {
   const addr = buildAddressDisplayText(pending);
 
   if (language === 'English') {
-    return `I will send this address to the store:\n📍 ${addr}\n\nPlease confirm it is correct by replying "yes", or correct me if there's any error.`;
+    return `I will send this address to the store:\n📍 **${addr}**\n\nPlease confirm it is correct by replying "yes", or correct me if there's any error.`;
   }
   if (language === 'French') {
-    return `Je vais envoyer cette adresse à la boutique :\n📍 ${addr}\n\nConfirmez-vous qu'elle est correcte ? Répondez "oui" ou corrigez-moi si nécessaire.`;
+    return `Je vais envoyer cette adresse à la boutique :\n📍 **${addr}**\n\nConfirmez-vous qu'elle est correcte ? Répondez "oui" ou corrigez-moi si nécessaire.`;
   }
-  return `Voy a enviar esta dirección al eCommerce:\n📍 ${addr}\n\n¿Confirmas que es correcta? Responde "sí" para confirmar o corrígeme si hay algún error.`;
+  return `Voy a enviar esta dirección al eCommerce:\n📍 **${addr}**\n\n¿Confirmas que es correcta? Responde "sí" para confirmar o corrígeme si hay algún error.`;
 }
 
 export function buildAddressNotFoundMessage(language: string): string {
@@ -303,12 +303,12 @@ export function buildSyncSuccessMessage(pending: PendingAddress, language: strin
   const addr = buildAddressDisplayText(pending);
 
   if (language === 'English') {
-    return `✅ Your delivery address has been successfully registered in ${storeName}!\n📍 ${addr}\n\nYour order status has been updated both in ${storeName} and in Adresles. It is now ready to be processed. Thank you!`;
+    return `✅ Your delivery address has been successfully registered in **${storeName}**!\n📍 **${addr}**\n\nYour order status has been updated both in **${storeName}** and in Adresles. It is now ready to be processed. Thank you!`;
   }
   if (language === 'French') {
-    return `✅ Votre adresse de livraison a été enregistrée avec succès dans ${storeName} !\n📍 ${addr}\n\nLe statut de votre commande a été mis à jour dans ${storeName} et dans Adresles. Elle est maintenant prête à être traitée. Merci !`;
+    return `✅ Votre adresse de livraison a été enregistrée avec succès dans **${storeName}** !\n📍 **${addr}**\n\nLe statut de votre commande a été mis à jour dans **${storeName}** et dans Adresles. Elle est maintenant prête à être traitée. Merci !`;
   }
-  return `✅ ¡Tu dirección de entrega ha sido registrada correctamente en ${storeName}!\n📍 ${addr}\n\nEl estado de tu pedido ha sido actualizado tanto en ${storeName} como en Adresles. Ya puede ser procesado. ¡Gracias!`;
+  return `✅ ¡Tu dirección de entrega ha sido registrada correctamente en **${storeName}**!\n📍 **${addr}**\n\nEl estado de tu pedido ha sido actualizado tanto en **${storeName}** como en Adresles. Ya puede ser procesado. ¡Gracias!`;
 }
 
 export function buildRegistrationOfferMessage(language: string): string {

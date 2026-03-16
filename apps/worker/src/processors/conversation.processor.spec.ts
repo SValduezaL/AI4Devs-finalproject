@@ -115,7 +115,7 @@ describe('conversationProcessor INFORMATION journey', () => {
     expect(dynamo.saveMessage).toHaveBeenCalledWith(
       'conv-info-1',
       'assistant',
-      expect.stringContaining('¡Hola Carmen!'),
+      expect.stringContaining('**Carmen**'),
     );
     const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
       (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
@@ -141,7 +141,7 @@ describe('conversationProcessor INFORMATION journey', () => {
     const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
       (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
     )?.[2];
-    expect(message).toMatch(/¡Hola Cliente!/);
+    expect(message).toContain('**Cliente**');
   });
 
   it('sends first message with order number from externalOrderId (not N/A)', async () => {
@@ -164,7 +164,8 @@ describe('conversationProcessor INFORMATION journey', () => {
     const message = (dynamo.saveMessage as jest.Mock).mock.calls.find(
       (c: unknown[]) => c[0] === 'conv-info-1' && c[1] === 'assistant',
     )?.[2];
-    expect(message).toContain('La dirección de entrega es: Calle Mayor 1, 3º A, 28001 Madrid.');
+    expect(message).toContain('📍 **Dirección de entrega:**');
+    expect(message).toContain('Calle Mayor 1, 3º A, 28001 Madrid');
   });
 
   it('sends first message with neutral address text when order has no orderAddress', async () => {

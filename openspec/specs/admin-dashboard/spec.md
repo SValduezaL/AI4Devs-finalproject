@@ -197,7 +197,7 @@ Iniciada: [startedAt] · Completada: [completedAt o "En curso"]
 │                              10:02                          │
 │                                                             │
 │  🤖│ He encontrado la dirección en Google Maps.           │
-│    │ ¿Confirmas: Calle Mayor 5, 28013 Madrid?             │
+│    │ ¿Confirmas: **Calle Mayor 5, 28013 Madrid**?         │
 │      10:03                                                  │
 │                                                             │
 │                                   Sí  │👤                   │
@@ -209,9 +209,9 @@ Iniciada: [startedAt] · Completada: [completedAt o "En curso"]
 ```
 
 **Burbujas por rol:**
-- `assistant` → alineado izquierda; `bg-gray-100 rounded-chat rounded-tl-sm border-l-2 border-brand-teal text-gray-900`; avatar `Bot` (`bg-brand-teal/10`)
-- `user` → alineado derecha; `bg-brand-teal rounded-chat rounded-tr-sm text-white`; avatar `User` (`bg-gray-100`)
-- `system` → centrado; `text-xs italic text-gray-400`; separadores `<div className="h-px flex-1 bg-gray-200">`
+- `assistant` → alineado izquierda; `bg-gray-100 rounded-chat rounded-tl-sm border-l-2 border-brand-teal text-gray-900`; avatar `Bot` (`bg-brand-teal/10`); el `content` SHALL renderizarse como Markdown estándar mediante `MarkdownMessage` con `colorScheme="light"`
+- `user` → alineado derecha; `bg-brand-teal rounded-chat rounded-tr-sm text-white`; avatar `User` (`bg-gray-100`); el `content` SHALL renderizarse como Markdown estándar mediante `MarkdownMessage` con `colorScheme="dark"`
+- `system` → centrado; `text-xs italic text-gray-400`; separadores `<div className="h-px flex-1 bg-gray-200">`; el `content` se renderiza como texto plano sin cambios
 
 Timestamps: `<time dateTime={timestamp}>` — `text-xs text-gray-400` (assistant) / `text-xs text-white/60` (user).
 
@@ -220,6 +220,14 @@ La vista SHALL hacer scroll automático al último mensaje al cargar (`useEffect
 #### Scenario: Mensajes renderizados como burbujas
 - **WHEN** el usuario accede a `/conversations/conv-uuid` con mensajes disponibles
 - **THEN** se muestran burbujas diferenciadas: assistant a la izquierda (gris, borde teal), user a la derecha (teal), system centrado (itálico)
+
+#### Scenario: Contenido Markdown renderizado en burbuja de asistente
+- **WHEN** un mensaje `assistant` contiene `**dirección**` en su `content`
+- **THEN** la burbuja muestra la dirección en negrita, sin mostrar los asteriscos literales
+
+#### Scenario: Texto plano sin Markdown en burbuja de asistente
+- **WHEN** un mensaje `assistant` contiene texto plano sin sintaxis Markdown
+- **THEN** la burbuja muestra el texto exactamente como si fuera texto plano (retrocompatibilidad)
 
 #### Scenario: Scroll automático al último mensaje
 - **WHEN** la página carga con mensajes

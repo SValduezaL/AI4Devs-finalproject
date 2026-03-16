@@ -42,6 +42,9 @@
 | **cmdk** | 1.x | Combobox / command palette |
 | **fetch nativo** | — | HTTP client (NO axios). Centralizado en `lib/api.ts` vía `apiFetch<T>()` |
 | **EventSource nativo** | — | SSE para tiempo real (simulación de conversaciones) |
+| **react-markdown** | 9.x | Renderizado Markdown en burbujas de chat (`MarkdownMessage`) |
+| **remark-gfm** | 4.x | Plugin GFM: tablas, strikethrough, task lists |
+| **remark-breaks** | 4.x | Plugin: convierte `\n` simples a `<br>` (imprescindible para mensajes del Worker) |
 
 ---
 
@@ -202,7 +205,10 @@ adresles/
   "clsx": "^2.1.1",
   "tailwind-merge": "^3.5.0",
   "class-variance-authority": "^0.7.1",
-  "tailwindcss": "^4 (devDependency)"
+  "tailwindcss": "^4 (devDependency)",
+  "react-markdown": "^9.x",
+  "remark-gfm": "^4.x",
+  "remark-breaks": "^4.x"
 }
 ```
 
@@ -303,7 +309,7 @@ Stack considerado:
 
 ---
 
-**Última actualización**: 2026-03-15 (infraestructura producción)  
+**Última actualización**: 2026-03-16  
 **Mantenido por**: Sergio  
-**Versiones actualizadas**: Prisma 5.22.0 (pinned), BullMQ 5.x, ESLint 9.x, @typescript-eslint 8.x, Next.js 16.1.6, React 19.2.3, Tailwind 4.x, sonner 2.x, cmdk 1.x  
+**Versiones actualizadas**: Prisma 5.22.0 (pinned), BullMQ 5.x, ESLint 9.x, @typescript-eslint 8.x, Next.js 16.1.6, React 19.2.3, Tailwind 4.x, sonner 2.x, cmdk 1.x, react-markdown 9.x, remark-gfm 4.x, remark-breaks 4.x  
 **Cambio de infraestructura**: Konsole H + Traefik (plan) → AWS Lightsail + Caddy (real); DockerHub → AWS ECR

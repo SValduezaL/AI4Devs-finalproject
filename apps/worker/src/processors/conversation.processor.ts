@@ -281,12 +281,13 @@ async function processInformationJourney(
   const orderNumber = order.externalOrderId;
   const addressLine =
     order.orderAddress != null
-      ? `La dirección de entrega es: ${order.orderAddress.fullAddress}.`
-      : 'La dirección de entrega que indicaste ha sido registrada correctamente.';
+      ? `📍 **Dirección de entrega:**\n${order.orderAddress.fullAddress}`
+      : '📍 La dirección de entrega que indicaste ha sido registrada correctamente.';
   const message = [
-    `¡Hola ${name}! ✅ Tu pedido #${orderNumber} de ${order.store.name} ha sido confirmado.`,
+    `¡Hola **${name}**!`,
+    `✅ Tu pedido **#${orderNumber}** de **${order.store.name}** ha sido confirmado.`,
     addressLine,
-    'Tu pedido será enviado pronto. ¡Gracias por tu compra!',
+    '📦 Tu pedido será enviado pronto.\n\n¡Gracias por tu compra!',
   ].join('\n\n');
 
   await saveMessage(conversationId, 'assistant', message);

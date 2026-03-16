@@ -2,7 +2,7 @@
 
 > **Contexto persistente del proyecto para sesiones de IA**  
 > **Última actualización**: 2026-03-16  
-> ✅ **Sesión completada**: fix-duplicate-user-messages — Mensajes de usuario duplicados en historial; causa: doble persistencia API+Worker; solución: solo API persiste (patrón single-writer documentado en patterns/)
+> ✅ **Sesión completada**: chat-markdown-rendering — Markdown en burbujas de chat; `react-markdown` + `remark-breaks` en frontend; 4 builders del Worker actualizados; patrón `chat-markdown-patterns.md` documentado
 
 ## 📖 Inicio Rápido
 
@@ -42,6 +42,7 @@ Decisiones clave que guían el desarrollo del proyecto:
 
 | [admin-table-page-patterns.md](./patterns/admin-table-page-patterns.md) | Patrón completo de página tabla paginada en Admin Dashboard: Server Component + Client, sort/filtros en URL, `buildUrl`, debounce, `Suspense`, `buildWhere`/`buildOrderBy` en NestJS | 2026-03-12 |
 | [conversation-message-single-writer.md](./patterns/conversation-message-single-writer.md) | Persistencia única del mensaje de usuario: API escribe en DynamoDB al recibir POST reply; Worker no reescribe el mismo mensaje (evita duplicados y reintentos) | 2026-03-16 |
+| [chat-markdown-patterns.md](./patterns/chat-markdown-patterns.md) | Markdown estándar en mensajes del Worker (`**bold**`, `\n`/`\n\n`); criterio D5 (qué builders usan Markdown); componente `MarkdownMessage` con `remark-breaks`; retrocompatibilidad automática | 2026-03-16 |
 
 Pendiente de documentar:
 - Límites de agregados DDD
@@ -100,6 +101,7 @@ Pendiente de documentar:
 | [2026-03-15](./sessions/2026-03-15-dynamodb-aws-migration.md) | dynamodb-aws-migration — DynamoDB Local → AWS real (Dev eu-west-1 + Prod eu-central-1); IAM mínimo privilegio; `DYNAMODB_TABLE_NAME` configurable; validación end-to-end — Completado | ✅ Completado (infraestructura) |
 | [2026-03-15](./sessions/2026-03-15-production-deployment.md) | production-deployment — MVP en producción: Lightsail + ECR + Caddy + Vercel; CI/CD GitHub Actions; `backend.adresles.com` + `simulator.adresles.com` — Completado | ✅ Completado (producción live) |
 | [2026-03-16](./sessions/2026-03-16-fix-duplicate-user-messages.md) | fix-duplicate-user-messages — Mensajes de usuario duplicados en historial; solo API persiste; Worker no reescribe; patrón single-writer documentado | ✅ Completado (3/3 tareas) |
+| [2026-03-16](./sessions/2026-03-16-chat-markdown-rendering.md) | chat-markdown-rendering — Renderizado Markdown en burbujas de chat; `react-markdown` + `remark-breaks`; 4 builders del Worker actualizados; criterio D5 documentado | ✅ Completado (21/21 tareas) |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
@@ -187,5 +189,5 @@ Este memory-bank permite a la IA:
 
 **Última revisión**: 2026-03-16  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: fix-duplicate-user-messages — mensajes de usuario duplicados en historial corregidos (solo API persiste; Worker no reescribe); patrón `conversation-message-single-writer.md` y sesión `2026-03-16-fix-duplicate-user-messages.md` añadidos.  
+**Cambios recientes**: chat-markdown-rendering — Markdown en burbujas de chat implementado; `react-markdown` + `remark-breaks` en frontend; 4 builders del Worker actualizados; patrón `chat-markdown-patterns.md` y sesión `2026-03-16-chat-markdown-rendering.md` añadidos; `tech-stack.md` actualizado con nuevas dependencias.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo

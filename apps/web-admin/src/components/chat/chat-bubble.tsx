@@ -2,6 +2,7 @@ import { Bot, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { ConversationMessage } from '@/types/api';
+import { MarkdownMessage } from './markdown-message';
 
 interface ChatBubbleProps {
   message: ConversationMessage;
@@ -39,7 +40,7 @@ export function ChatBubble({ message }: ChatBubbleProps) {
               'bg-gray-100 px-4 py-2.5 text-sm text-gray-900',
             )}
           >
-            {message.content}
+            <MarkdownMessage content={message.content} colorScheme="light" />
           </div>
           <time
             dateTime={message.timestamp}
@@ -61,8 +62,8 @@ export function ChatBubble({ message }: ChatBubbleProps) {
             'rounded-chat rounded-tr-sm',
             'bg-brand-teal px-4 py-2.5 text-sm text-white',
           )}
-        >
-          {message.content}
+          >
+          <MarkdownMessage content={message.content} colorScheme="dark" />
         </div>
         <time
           dateTime={message.timestamp}
