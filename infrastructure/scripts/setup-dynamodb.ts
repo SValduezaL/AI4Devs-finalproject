@@ -1,8 +1,9 @@
 /**
  * Script de inicialización de DynamoDB Local.
- * Crea la tabla adresles-messages con TTL de 90 días.
+ * Crea la tabla configurada en DYNAMODB_TABLE_NAME con TTL de 90 días.
+ * Variables de entorno (desde .env): DYNAMODB_ENDPOINT, DYNAMODB_TABLE_NAME, AWS_REGION, etc.
  *
- * Uso: npx ts-node infrastructure/scripts/setup-dynamodb.ts
+ * Uso: pnpm dynamo:setup (carga .env) o npx ts-node infrastructure/scripts/setup-dynamodb.ts
  */
 
 import {
@@ -25,7 +26,7 @@ const client = new DynamoDBClient({
   },
 });
 
-const TABLE_NAME = 'adresles-messages';
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME ?? 'adresles-messages';
 const TTL_DAYS = 90;
 
 async function tableExists(): Promise<boolean> {
