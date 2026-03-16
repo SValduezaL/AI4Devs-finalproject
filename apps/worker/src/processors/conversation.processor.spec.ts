@@ -548,3 +548,62 @@ describe('processResponseProcessor offerSaveAddress — dirección ya en libreta
     );
   });
 });
+
+describe('processResponseProcessor — persistencia única del mensaje de usuario', () => {
+  const jobData = {
+    conversationId: 'conv-1',
+    orderId: 'order-1',
+    userId: 'user-1',
+    userMessage: 'Calle Mayor 1, Madrid',
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const { PrismaClient } = await import('@adresles/prisma-db');
+    const instance = new (PrismaClient as jest.Mock)();
+    (instance.user.findUnique as jest.Mock).mockResolvedValue({
+      id: 'user-1',
+      firstName: 'Test',
+      lastName: 'User',
+      preferredLanguage: 'es',
+      isRegistered: false,
+      phone: { id: 'phone-1' },
+    });
+    (instance.conversation.findUnique as jest.Mock).mockResolvedValue({ id: 'conv-1' });
+    (instance.order.findUnique as jest.Mock).mockResolvedValue({
+      externalOrderId: 'EXT-1',
+      store: { name: 'StoreX' },
+      orderAddress: null,
+    });
+    const dynamo = await import('../dynamodb/dynamodb.service');
+    (dynamo.getConversationState as jest.Mock).mockResolvedValue({
+      phase: 'WAITING_ADDRESS',
+      failedAttempts: 0,
+    });
+    (dynamo.getMessages as jest.Mock).mockResolvedValue([
+      { role: 'assistant', content: '¿Cuál es tu dirección?' },
+      { role: 'user', content: jobData.userMessage },
+    ]);
+    (dynamo.saveMessage as jest.Mock).mockResolvedValue(undefined);
+    (dynamo.saveConversationState as jest.Mock).mockResolvedValue(undefined);
+    mockLLMService.extractAddress.mockResolvedValue({
+      isComplete: false,
+      missingFields: ['city'],
+      couldBeBuilding: false,
+      address: null,
+    });
+  });
+
+  it('no llama a saveMessage con rol user (solo la API persiste el mensaje del reply)', async () => {
+    const { processResponseProcessor } = await import('./conversation.processor');
+    const dynamo = await import('../dynamodb/dynamodb.service');
+
+    const job = { data: jobData } as never;
+    await processResponseProcessor(job);
+
+    const userCalls = (dynamo.saveMessage as jest.Mock).mock.calls.filter(
+      (call: unknown[]) => call[1] === 'user',
+    );
+    expect(userCalls).toHaveLength(0);
+  });
+});

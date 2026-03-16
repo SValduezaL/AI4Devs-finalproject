@@ -319,8 +319,6 @@ export async function processResponseProcessor(job: Job<ProcessResponseJobData>)
   const { conversationId, orderId, userId, userMessage } = job.data;
   console.log(`[PROCESS_RESPONSE] Conversation ${conversationId} — user: "${userMessage}"`);
 
-  await saveMessage(conversationId, 'user', userMessage);
-
   const [conversation, user, order] = await Promise.all([
     prisma.conversation.findUnique({ where: { id: conversationId } }),
     prisma.user.findUnique({ where: { id: userId }, include: { phone: true } }),

@@ -1,8 +1,8 @@
 # Memory Bank - Adresles
 
 > **Contexto persistente del proyecto para sesiones de IA**  
-> **Última actualización**: 2026-03-15  
-> ✅ **Sesión completada**: production-deployment — MVP desplegado en producción: API + Worker + Redis en AWS Lightsail (`backend.adresles.com`) con Docker Compose + Caddy (HTTPS automático); Dashboard Admin en Vercel (`simulator.adresles.com`); CI/CD GitHub Actions → ECR → SSH; ADR-011 creado
+> **Última actualización**: 2026-03-16  
+> ✅ **Sesión completada**: fix-duplicate-user-messages — Mensajes de usuario duplicados en historial; causa: doble persistencia API+Worker; solución: solo API persiste (patrón single-writer documentado en patterns/)
 
 ## 📖 Inicio Rápido
 
@@ -41,6 +41,7 @@ Decisiones clave que guían el desarrollo del proyecto:
 | [worker-testing-patterns.md](./patterns/worker-testing-patterns.md) | Mock Prisma/Redis/DynamoDB; inyección ILLMService con setLLMService(); mock de Order con store y orderAddress para INFORMATION | 2026-03-09 |
 
 | [admin-table-page-patterns.md](./patterns/admin-table-page-patterns.md) | Patrón completo de página tabla paginada en Admin Dashboard: Server Component + Client, sort/filtros en URL, `buildUrl`, debounce, `Suspense`, `buildWhere`/`buildOrderBy` en NestJS | 2026-03-12 |
+| [conversation-message-single-writer.md](./patterns/conversation-message-single-writer.md) | Persistencia única del mensaje de usuario: API escribe en DynamoDB al recibir POST reply; Worker no reescribe el mismo mensaje (evita duplicados y reintentos) | 2026-03-16 |
 
 Pendiente de documentar:
 - Límites de agregados DDD
@@ -98,6 +99,7 @@ Pendiente de documentar:
 | [2026-03-13](./sessions/2026-03-13-external-order-id-coherence.md) | external-order-id-coherence — `externalOrderId` como fuente única; `ExternalOrderIdService` por plataforma; DTO opcional — Completado | ✅ Completado (39/39 tareas, 210 tests) |
 | [2026-03-15](./sessions/2026-03-15-dynamodb-aws-migration.md) | dynamodb-aws-migration — DynamoDB Local → AWS real (Dev eu-west-1 + Prod eu-central-1); IAM mínimo privilegio; `DYNAMODB_TABLE_NAME` configurable; validación end-to-end — Completado | ✅ Completado (infraestructura) |
 | [2026-03-15](./sessions/2026-03-15-production-deployment.md) | production-deployment — MVP en producción: Lightsail + ECR + Caddy + Vercel; CI/CD GitHub Actions; `backend.adresles.com` + `simulator.adresles.com` — Completado | ✅ Completado (producción live) |
+| [2026-03-16](./sessions/2026-03-16-fix-duplicate-user-messages.md) | fix-duplicate-user-messages — Mensajes de usuario duplicados en historial; solo API persiste; Worker no reescribe; patrón single-writer documentado | ✅ Completado (3/3 tareas) |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
@@ -148,7 +150,8 @@ memory-bank/
 │   ├── frontend-form-patterns.md   # Formularios modal, dirección eCommerce, combobox
 │   ├── prisma-shared-package-patterns.md  # Schema+migraciones+seed en packages/prisma-db
 │   ├── worker-testing-patterns.md   # Mock Prisma/Redis/DynamoDB para specs del Worker
-│   └── admin-table-page-patterns.md  # Patrón tabla paginada Admin: Server Component + sort/filtros en URL
+│   ├── admin-table-page-patterns.md  # Patrón tabla paginada Admin: Server Component + sort/filtros en URL
+│   └── conversation-message-single-writer.md  # API escribe mensaje usuario; Worker no reescribe (evita duplicados)
 │
 ├── sessions/                   # Aprendizajes de sesiones pasadas
 │   └── (se documenta conforme avanza el proyecto)
@@ -182,7 +185,7 @@ Este memory-bank permite a la IA:
 
 ---
 
-**Última revisión**: 2026-03-15  
+**Última revisión**: 2026-03-16  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: production-deployment completado — MVP desplegado en AWS Lightsail (`backend.adresles.com`) + Vercel (`simulator.adresles.com`); Dockerfiles multi-stage para API y Worker; `docker-compose.prod.yml` + `Caddyfile`; CI/CD con GitHub Actions → ECR → SSH; bugs resueltos (Prisma + Alpine OpenSSL 3.x, `dist/src/main.js`, dotenv en dependencies, Vercel monorepo output directory); ADR-011 creado; session-2026-03-15-production-deployment.md añadida.  
+**Cambios recientes**: fix-duplicate-user-messages — mensajes de usuario duplicados en historial corregidos (solo API persiste; Worker no reescribe); patrón `conversation-message-single-writer.md` y sesión `2026-03-16-fix-duplicate-user-messages.md` añadidos.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo
