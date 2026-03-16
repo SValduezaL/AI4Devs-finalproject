@@ -202,7 +202,7 @@ adresles/
 │   ├── prisma-db/              # @adresles/prisma-db — schema, migraciones, seed, cliente Prisma
 │   └── shared-types/           # @adresles/shared-types — tipos BullMQ, DTOs compartidos
 ├── infrastructure/
-│   ├── docker/                 # Docker Compose (PostgreSQL, Redis, DynamoDB Local)
+│   ├── docker/                 # Docker Compose (Redis, DynamoDB Local) — PostgreSQL vía Supabase
 │   └── scripts/                # setup-dynamodb.ts, etc.
 ├── memory-bank/                # Contexto persistente, ADRs, patrones
 ├── openspec/                   # Specs, changes archivados
@@ -273,10 +273,10 @@ pnpm install
 # 3. Configurar variables de entorno
 # Copiar .env.example a .env en la raíz y rellenar (ver sección anterior)
 
-# 4. Iniciar servicios con Docker Compose (PostgreSQL, Redis, DynamoDB Local)
+# 4. Iniciar servicios con Docker Compose (Redis, DynamoDB Local). PostgreSQL se usa vía Supabase (.env).
 docker compose -f infrastructure/docker/docker-compose.yml up -d
 
-# 5. Configurar DynamoDB Local (tabla adresles-messages)
+# 5. Configurar DynamoDB Local (tabla según DYNAMODB_TABLE_NAME en .env; por defecto adresles-messages)
 pnpm dynamo:setup
 
 # 5b. [Opcional] Validar conexión a DynamoDB en AWS
@@ -665,14 +665,14 @@ adresles/
 │
 ├── infrastructure/
 │   ├── docker/
-│   │   ├── docker-compose.yml             # Dev local: PostgreSQL, Redis, DynamoDB Local
+│   │   ├── docker-compose.yml             # Dev local: Redis, DynamoDB Local (PostgreSQL vía Supabase)
 │   │   ├── docker-compose.prod.yml        # Producción: api, worker, redis, caddy
 │   │   └── Caddyfile                      # Reverse proxy — backend.adresles.com HTTPS
 │   ├── iam/
 │   │   ├── policy-adresles-app-dev.json   # Política IAM mínima para adresles-app-dev
 │   │   └── policy-adresles-app-prod.json  # Política IAM mínima para adresles-app-prod
 │   └── scripts/
-│       ├── setup-dynamodb.ts              # Crea la tabla en DynamoDB Local
+│       ├── setup-dynamodb.ts              # Crea la tabla en DynamoDB Local (nombre desde DYNAMODB_TABLE_NAME en .env)
 │       └── validate-dynamodb-aws.ts       # Valida conexión y escritura en AWS
 │
 ├── memory-bank/                       # Contexto persistente

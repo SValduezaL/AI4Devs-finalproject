@@ -155,7 +155,7 @@ adresles/
 │
 ├── infrastructure/
 │   ├── docker/
-│   │   ├── docker-compose.yml       # Dev local: Redis 7, DynamoDB-local, PostgreSQL 15
+│   │   ├── docker-compose.yml       # Dev local: Redis 7, DynamoDB-local (PostgreSQL vía Supabase)
 │   │   ├── docker-compose.prod.yml  # Producción: api, worker, redis, caddy
 │   │   └── Caddyfile                # Reverse proxy — backend.adresles.com HTTPS
 │   └── scripts/

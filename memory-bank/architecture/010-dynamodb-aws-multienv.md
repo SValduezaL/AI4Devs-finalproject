@@ -187,7 +187,7 @@ pnpm dynamo:validate:prod   # Escribe y lee en adresles-messages-prod
 - **Políticas IAM**: [`infrastructure/iam/policy-adresles-app-dev.json`](../../infrastructure/iam/policy-adresles-app-dev.json)
 - **Políticas IAM**: [`infrastructure/iam/policy-adresles-app-prod.json`](../../infrastructure/iam/policy-adresles-app-prod.json)
 - **Script de validación**: [`infrastructure/scripts/validate-dynamodb-aws.ts`](../../infrastructure/scripts/validate-dynamodb-aws.ts)
-- **Script de setup local**: [`infrastructure/scripts/setup-dynamodb.ts`](../../infrastructure/scripts/setup-dynamodb.ts)
+- **Script de setup local**: [`infrastructure/scripts/setup-dynamodb.ts`](../../infrastructure/scripts/setup-dynamodb.ts) — lee `DYNAMODB_TABLE_NAME` del `.env` (por defecto `adresles-messages`)
 - **AWS DynamoDB TTL**: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/TTL.html
 - **AWS IAM Least Privilege**: https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html#grant-least-privilege
 

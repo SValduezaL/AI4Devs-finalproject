@@ -103,6 +103,7 @@ Pendiente de documentar:
 | [2026-03-16](./sessions/2026-03-16-fix-duplicate-user-messages.md) | fix-duplicate-user-messages — Mensajes de usuario duplicados en historial; solo API persiste; Worker no reescribe; patrón single-writer documentado | ✅ Completado (3/3 tareas) |
 | [2026-03-16](./sessions/2026-03-16-chat-markdown-rendering.md) | chat-markdown-rendering — Renderizado Markdown en burbujas de chat; `react-markdown` + `remark-breaks`; 4 builders del Worker actualizados; criterio D5 documentado | ✅ Completado (21/21 tareas) |
 | [2026-03-16](./sessions/2026-03-16-simulate-modal-smart-defaults.md) | simulate-modal-smart-defaults — Defaults inteligentes en modal `/simulate`; lazy initializer productos; auto-fill condicional direcciones; pills filtro registro en `UserCombobox` | ✅ Completado (13/13 tareas impl. + build/lint ✓) |
+| [2026-03-16](./sessions/2026-03-16-env-dynamo-docker-compose.md) | env-dynamo-docker-compose — `setup-dynamodb.ts` usa `DYNAMODB_TABLE_NAME` desde .env; Postgres eliminado de docker-compose.yml (solo Supabase); readme y memory-bank actualizados | ✅ Completado |
 
 **Próximo change**: Por definir (candidatos: instrucción de idioma en todos los journeys, mejoras en mensajes por idioma).
 
