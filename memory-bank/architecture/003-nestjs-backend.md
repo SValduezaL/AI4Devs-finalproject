@@ -3,7 +3,7 @@
 **Estado**: ✅ Aceptada  
 **Fecha**: 2026-01-30  
 **Decidido en**: Fase 4 - Diseño de Alto Nivel  
-**Implementado en**: Pendiente (diseño completado)  
+**Implementado en**: ✅ apps/api/ (NestJS 10, producción en `backend.adresles.com`)  
 **Reemplaza a**: N/A
 
 ---

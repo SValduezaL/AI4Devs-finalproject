@@ -1,8 +1,8 @@
 # Glosario del Dominio - Adresles
 
-> **Última actualización**: 2026-02-19  
+> **Última actualización**: 2026-03-19  
 > **Documento fuente**: [Adresles_Business.md - Glosario](../../Adresles_Business.md#glosario)  
-> ⚠️ **Actualizado v1.5**: Order Status — READY_TO_PROCESS es el estado final del MVP (COMPLETED solo para integración real); nuevos términos StatusSource y syncedAt
+> ⚠️ **Actualizado v1.7**: GPT-4→GPT-4o-mini con abstracción `ILLMService`; `externalOrderId` como fuente única
 
 ---
 
@@ -67,7 +67,7 @@ Servicio backend que gestiona el flujo de conversaciones, selecciona el journey 
 Servicio que valida y normaliza direcciones usando Google Maps API, detectando datos faltantes (piso, puerta, etc.).
 
 #### **Worker**
-Proceso asíncrono (BullMQ) que ejecuta tareas en background (envío de reminders, procesamiento de webhooks).
+Proceso asíncrono Node.js puro (sin NestJS) que ejecuta tareas en background con BullMQ. Procesa conversaciones IA (`conversation.processor.ts`) con máquina de estados de 9 fases, valida direcciones con Google Maps (`address.service.ts`) y persiste mensajes en DynamoDB (`dynamodb.service.ts`). Accede a OpenAI vía `ILLMService`.
 
 #### **Webhook**
 Notificación HTTP que el eCommerce envía a Adresles cuando se crea un nuevo pedido.
@@ -168,8 +168,8 @@ Estados de la conversación:
 
 ### Integraciones Externas
 
-#### **GPT-4**
-Modelo de lenguaje de OpenAI usado para generar respuestas conversacionales naturales y entender las respuestas del usuario.
+#### **GPT-4o-mini** (antes GPT-4)
+Modelo de lenguaje de OpenAI usado en producción para generar respuestas conversacionales naturales y entender las respuestas del usuario. Seleccionado por balance coste/latencia. Accedido vía abstracción `ILLMService` (implementaciones: `OpenAILLMService` para producción, `MockLLMService` para tests).
 
 #### **Google Maps API**
 Servicio de Google para geocoding, validación y normalización de direcciones.
@@ -272,9 +272,10 @@ Proceso donde el usuario puede optar por registrarse en Adresles después de com
 
 ---
 
-**Última actualización**: 2026-03-13  
+**Última actualización**: 2026-03-19  
 **Mantenido por**: Sergio  
 **Cambios v1.4**: OrderStatus actualizado (nuevos estados PENDING_PAYMENT, READY_TO_PROCESS, COMPLETED, CANCELED); añadidos términos Phone, OrderMode, PaymentType, AddressOrigin  
 **Cambios v1.5**: Order Status — semántica corregida: READY_TO_PROCESS es el estado final del MVP; COMPLETED reservado para integración real. Añadidos términos StatusSource y syncedAt (`cu03-b1-worker-db-sync`)  
 **Cambios v1.6**: `externalOrderId` consolidado como fuente única de verdad; `externalOrderNumber` marcado como campo legacy. `JSON Order Mock` actualizado (`external_order_id` opcional, generado por backend). Añadida entrada `externalOrderId` / `ExternalOrderIdService` (`external-order-id-coherence`, 2026-03-13)  
+**Cambios v1.7**: GPT-4→GPT-4o-mini con abstracción `ILLMService` (`OpenAILLMService` + `MockLLMService`); Worker redefinido como Node.js puro con detalles de implementación  
 **Evoluciona con**: Cada nuevo término del dominio que surja durante el desarrollo

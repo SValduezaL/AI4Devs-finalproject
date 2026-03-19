@@ -12,7 +12,7 @@
 
 El flujo principal de Adresles requiere procesar conversaciones IA entre el sistema y el usuario final para obtener/confirmar su dirección de entrega. Este procesamiento implica:
 
-- **Llamadas a OpenAI GPT-4** con latencia variable (1–5 segundos típicos)
+- **Llamadas a OpenAI GPT-4o-mini** con latencia variable (1–5 segundos típicos)
 - **Llamadas a Google Maps API** para validar y normalizar direcciones
 - **Operaciones de escritura en DynamoDB** (guardar mensajes)
 - **Múltiples actualizaciones en Supabase** (estado de orden, OrderAddress)
@@ -55,7 +55,7 @@ El API encola un job en Redis (via BullMQ) al recibir un pedido y responde inmed
 
 ### Razones Principales
 
-1. **Latencia de IA inaceptable en síncronía**: Las llamadas a OpenAI GPT-4 tienen latencia variable (1–5 s típicos, hasta 30 s en sobrecarga). Bloquear el hilo del API durante ese tiempo degradaría la experiencia y agotaría los workers de Express.
+1. **Latencia de IA inaceptable en síncronía**: Las llamadas a OpenAI GPT-4o-mini tienen latencia variable (1–5 s típicos, hasta 30 s en sobrecarga). Bloquear el hilo del API durante ese tiempo degradaría la experiencia y agotaría los workers de Express.
 
 2. **Resiliencia ante fallos transitorios**: BullMQ ofrece reintentos con backoff exponencial de forma nativa. Si OpenAI o Google Maps fallan momentáneamente, el job se reintenta sin intervención manual.
 
@@ -171,7 +171,7 @@ const worker = new Worker('process-conversation', async (job) => {
 - **ADRs relacionados**:
   - [ADR-001](./001-monolith-modular.md) — Monolito modular (motivo del Worker como app separada, no microservicio)
   - [ADR-002](./002-supabase-dynamodb.md) — DynamoDB para mensajes (complementario: Worker es el consumidor de DynamoDB)
-  - [ADR-004](./004-openai-gpt4.md) — OpenAI GPT-4 (el Worker es quien llama a OpenAI)
+  - [ADR-004](./004-openai-gpt4.md) — OpenAI GPT-4o-mini (el Worker es quien llama a OpenAI vía `ILLMService`)
 - **Documentación externa**: [BullMQ Docs](https://docs.bullmq.io/)
 
 ---

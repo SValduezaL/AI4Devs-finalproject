@@ -23,7 +23,7 @@ ADRESLES
 
 ### **0.3. Descripción breve del proyecto:**
 
-Adresles es una plataforma SaaS B2B2C que revoluciona la experiencia de checkout en tiendas online eliminando la fricción más común: la introducción manual de la dirección de entrega. El comprador completa su pedido indicando únicamente nombre y número de teléfono. Un agente conversacional basado en IA (GPT-4) contacta al usuario para obtener la dirección mediante conversación natural, actualizándola automáticamente en el sistema del eCommerce.
+Adresles es una plataforma SaaS B2B2C que revoluciona la experiencia de checkout en tiendas online eliminando la fricción más común: la introducción manual de la dirección de entrega. El comprador completa su pedido indicando únicamente nombre y número de teléfono. Un agente conversacional basado en IA (OpenAI GPT-4o-mini) contacta al usuario para obtener la dirección mediante conversación natural, actualizándola automáticamente en el sistema del eCommerce.
 
 **Propuesta de valor central**: "Compra solo con nombre + teléfono, nosotros obtenemos tu dirección conversando contigo"
 
@@ -57,7 +57,7 @@ https://github.com/SValduezaL/AI4Devs-finalproject
 **Valor diferencial**:
 
 1. **Checkout ultra-rápido**: Solo nombre + teléfono (2 campos vs 12 tradicionales)
-2. **Conversación natural con IA**: GPT-4 obtiene la dirección mediante diálogo fluido adaptado al usuario
+2. **Conversación natural con IA**: GPT-4o-mini obtiene la dirección mediante diálogo fluido adaptado al usuario
 3. **Validación inteligente**: Integración con Google Maps API + detección proactiva de datos faltantes (escalera, bloque, piso, puerta)
 4. **Libreta de direcciones centralizada**: El usuario guarda direcciones reutilizables en cualquier eCommerce integrado con Adresles
 5. **Funcionalidad de Regalo**: Permite comprar para terceros sin conocer su dirección
@@ -74,13 +74,13 @@ https://github.com/SValduezaL/AI4Devs-finalproject
 
 | Función                       | Descripción                                                  | Estado                            |
 | ----------------------------- | ------------------------------------------------------------ | --------------------------------- |
-| **Checkout Adresles**         | Completar compra solo con nombre y teléfono (sin dirección)  | ✅ Diseñado (MVP Mock)            |
-| **Conversación IA**           | Indicar dirección por chat natural en App Adresles con GPT-4 | ✅ Diseñado (Implementación real) |
-| **Libreta de Direcciones**    | Gestionar direcciones favoritas reutilizables                | ✅ Diseñado                       |
-| **Modo Regalo**               | Enviar pedido a otra persona sin conocer su dirección        | ✅ Diseñado (MVP Mock)            |
-| **Registro Adresles**         | Crear cuenta para persistir preferencias y direcciones       | ✅ Diseñado                       |
-| **Detección de idioma**       | Conversación automática en el idioma del usuario             | ✅ Diseñado (simulado en MVP)     |
-| **Validación de direcciones** | Google Maps API normaliza y detecta datos faltantes          | ✅ Diseñado (Implementación real) |
+| **Checkout Adresles**         | Completar compra solo con nombre y teléfono (sin dirección)  | ✅ Implementado (MVP — `POST /api/mock/orders` modo adresles) |
+| **Conversación IA**           | Indicar dirección por chat natural con GPT-4o-mini           | ✅ Implementado (Worker + OpenAI en producción) |
+| **Libreta de Direcciones**    | Gestionar direcciones favoritas reutilizables                | ✅ Implementado (sub-journey libreta en Worker + página `/addresses` en Admin) |
+| **Modo Regalo**               | Enviar pedido a otra persona sin conocer su dirección        | ✅ Diseñado (pendiente post-MVP)  |
+| **Registro Adresles**         | Crear cuenta para persistir preferencias y direcciones       | ✅ Implementado (sub-journey registro voluntario en Worker) |
+| **Detección de idioma**       | Conversación automática en el idioma del usuario             | ✅ Diseñado (pendiente post-MVP)  |
+| **Validación de direcciones** | Google Maps API normaliza y detecta datos faltantes          | ✅ Implementado (Worker + Google Maps API en producción) |
 
 #### **Para el eCommerce (B2B)**
 
@@ -96,10 +96,10 @@ https://github.com/SValduezaL/AI4Devs-finalproject
 
 | Función                           | Descripción                                           | Estado                              |
 | --------------------------------- | ----------------------------------------------------- | ----------------------------------- |
-| **Orquestador de Conversaciones** | Gestión del flujo conversacional con GPT-4            | ✅ Implementado (Backend NestJS)    |
+| **Orquestador de Conversaciones** | Gestión del flujo conversacional con GPT-4o-mini      | ✅ Implementado (Worker BullMQ + `ILLMService` abstracción) |
 | **Motor de Journeys**             | Selección automática del flujo según contexto usuario | ✅ Implementado (GET_ADDRESS, INFORMATION; sub-journeys: propuesta dir, registro, libreta) |
 | **Sistema de Reminders**          | Recordatorios tras 15 min sin respuesta               | ⏳ Pendiente post-MVP               |
-| **Validador de Direcciones**      | Google Maps API + detección datos faltantes           | ✅ Diseñado (Implementación real)   |
+| **Validador de Direcciones**      | Google Maps API + detección datos faltantes           | ✅ Implementado (Worker + Google Maps API en producción) |
 | **Escalado a Soporte**            | Envío de incidencias por email cuando IA no resuelve  | ✅ Diseñado                         |
 | **Multi-tenant con RLS**          | Aislamiento de datos entre eCommerce                  | ✅ Diseñado (Supabase RLS policies) |
 
@@ -156,7 +156,7 @@ https://github.com/SValduezaL/AI4Devs-finalproject
 
 #### **Experiencia de Conversación**
 
-La conversación con el agente IA (GPT-4) incluye:
+La conversación con el agente IA (GPT-4o-mini) incluye:
 
 - **Saludo personalizado** en el idioma del usuario
 - **Confirmación de compra** (tienda, productos)
@@ -179,10 +179,9 @@ La conversación con el agente IA (GPT-4) incluye:
 **Stack Tecnológico**:
 
 - **Backend**: Node.js + NestJS + TypeScript
-- **Frontend Chat**: React + Vite + TailwindCSS + Shadcn/ui
-- **Frontend Admin**: Next.js 16 + Tailwind v4 + Shadcn/ui
+- **Frontend Admin**: Next.js 16 + React 19 + Tailwind v4 + Shadcn/ui
 - **Base de Datos**: Supabase (PostgreSQL) + AWS DynamoDB
-- **IA Conversacional**: OpenAI GPT-4
+- **IA Conversacional**: OpenAI GPT-4o-mini (abstracción `ILLMService`)
 - **Validación de Direcciones**: Google Maps API (Geocoding)
 - **Colas**: Redis + BullMQ
 - **Deployment**: Docker Compose + Caddy (reverse proxy con SSL automático vía Let's Encrypt)
@@ -195,8 +194,7 @@ La conversación con el agente IA (GPT-4) incluye:
 adresles/
 ├── apps/
 │   ├── api/                    # Backend NestJS
-│   ├── worker/                 # Worker BullMQ para conversaciones
-│   ├── web-chat/               # Frontend Chat (React + Vite) — pendiente
+│   ├── worker/                 # Worker BullMQ + OpenAI (Node.js puro)
 │   └── web-admin/              # Frontend Admin (Next.js 16)
 ├── packages/
 │   ├── prisma-db/              # @adresles/prisma-db — schema, migraciones, seed, cliente Prisma
@@ -218,7 +216,7 @@ adresles/
 | ---------------- | ------------------------------------------- | -------------------------- |
 | **Supabase**     | PostgreSQL + Auth + RLS                     | Cuenta gratuita disponible |
 | **AWS DynamoDB** | Mensajes conversacionales (alta volumetría) | Pay-per-request — `adresles-messages-dev` (eu-west-1) y `adresles-messages-prod` (eu-central-1) |
-| **OpenAI**       | API GPT-4 para conversaciones               | API Key requerida          |
+| **OpenAI**       | API GPT-4o-mini para conversaciones (abstracción `ILLMService`) | API Key requerida |
 | **Google Maps**  | Geocoding y validación de direcciones       | API Key requerida          |
 | **Vercel**       | Hosting Dashboard Admin (`simulator.adresles.com`) | Free tier — producción activa |
 | **AWS Lightsail** | Servidor producción (API + Worker + Redis) | `backend.adresles.com` — $12/mes |
@@ -432,8 +430,8 @@ C4Context
     System_Ext(supabase, "Supabase", "PostgreSQL + Auth")
     System_Ext(dynamodb, "AWS DynamoDB", "Conversaciones")
 
-    Rel(buyer, adresles, "Proporciona dirección", "HTTPS / WebSocket")
-    Rel(recipient, adresles, "Dirección regalo", "HTTPS / WebSocket")
+    Rel(buyer, adresles, "Proporciona dirección", "HTTPS / SSE")
+    Rel(recipient, adresles, "Dirección regalo", "HTTPS / SSE")
     Rel(admin, adresles, "Gestión y configuración", "HTTPS")
 
     Rel(ecommerce, adresles, "Webhook pedidos", "HTTPS")
@@ -454,31 +452,29 @@ C4Container
     Person(admin, "Admin eCommerce", "Gestiona tienda")
 
     System_Boundary(adresles, "Adresles Platform") {
-        Container(spa_chat, "Chat App", "React + Vite", "Aplicación de conversación para usuarios")
-        Container(spa_admin, "Dashboard Admin", "Next.js", "Panel de gestión para eCommerce")
-        Container(api, "API Backend", "Node.js + NestJS", "API REST + WebSocket para toda la lógica de negocio")
-        Container(worker, "Conversation Worker", "Node.js + BullMQ", "Procesa conversaciones con OpenAI de forma asíncrona")
-        Container(redis, "Redis", "Redis 7", "Cache + Cola de mensajes")
+        Container(spa_admin, "Dashboard Admin + Simulador", "Next.js 16", "Panel de gestión y simulador de conversaciones SSE")
+        Container(api, "API Backend", "Node.js + NestJS", "API REST + SSE para lógica de negocio")
+        Container(worker, "Conversation Worker", "Node.js + BullMQ", "Procesa conversaciones con OpenAI GPT-4o-mini de forma asíncrona")
+        Container(redis, "Redis", "Redis 7", "Cache + Cola BullMQ + Pub/Sub SSE")
     }
 
     System_Ext(ecommerce, "eCommerce Platform", "WooCommerce, etc.")
     System_Ext(supabase, "Supabase", "PostgreSQL + Auth")
-    System_Ext(dynamodb, "DynamoDB", "Conversaciones")
-    System_Ext(openai, "OpenAI", "GPT-4")
+    System_Ext(dynamodb, "DynamoDB", "Mensajes conversacionales")
+    System_Ext(openai, "OpenAI", "GPT-4o-mini")
     System_Ext(gmaps, "Google Maps", "Geocoding")
 
-    Rel(buyer, spa_chat, "Usa", "HTTPS")
-    Rel(admin, spa_admin, "Usa", "HTTPS")
-    Rel(spa_chat, api, "API calls + WebSocket", "HTTPS/WSS")
-    Rel(spa_admin, api, "API calls", "HTTPS")
+    Rel(buyer, spa_admin, "Simula conversación", "HTTPS + SSE")
+    Rel(admin, spa_admin, "Gestiona pedidos", "HTTPS")
+    Rel(spa_admin, api, "API calls + SSE", "HTTPS")
 
-    Rel(api, redis, "Cache + Publish jobs", "TCP")
-    Rel(worker, redis, "Subscribe jobs", "TCP")
+    Rel(api, redis, "BullMQ jobs + Pub/Sub SSE", "TCP")
+    Rel(worker, redis, "Subscribe jobs + Publish eventos", "TCP")
     Rel(api, supabase, "CRUD datos", "HTTPS")
-    Rel(api, dynamodb, "CRUD conversaciones", "HTTPS")
-    Rel(worker, dynamodb, "Guarda mensajes", "HTTPS")
-    Rel(worker, openai, "Genera respuestas", "HTTPS")
-    Rel(api, gmaps, "Valida direcciones", "HTTPS")
+    Rel(api, dynamodb, "Lee mensajes (Admin)", "HTTPS")
+    Rel(worker, dynamodb, "Persiste mensajes + estado", "HTTPS")
+    Rel(worker, openai, "Genera respuestas (ILLMService)", "HTTPS")
+    Rel(worker, gmaps, "Valida direcciones", "HTTPS")
 
     Rel(ecommerce, api, "Webhooks", "HTTPS")
     Rel(api, ecommerce, "Sync direcciones", "HTTPS")
@@ -503,26 +499,25 @@ C4Container
 
 #### **Backend - API (NestJS)**
 
-**Tecnología**: Node.js + NestJS + TypeScript  
+**Tecnología**: Node.js + NestJS 10 + TypeScript  
 **Puerto**: 3000  
+**URL producción**: `https://backend.adresles.com`  
 **Responsabilidades**:
 
 - Endpoints REST para gestión de pedidos, direcciones, usuarios
-- WebSocket Gateway para comunicación en tiempo real con usuarios
-- Orquestación de conversaciones (Journey Engine)
-- Integración con Google Maps API para validación de direcciones
+- Server-Sent Events (SSE) para comunicación en tiempo real (Redis Pub/Sub)
+- Orquestación de conversaciones (Journey Engine) — encola jobs BullMQ
 - Gestión de webhooks desde eCommerce (mockeados en MVP)
-- Autenticación y autorización con Supabase Auth
 
 **Módulos principales**:
 
-- `mock/`: `POST /api/mock/orders` — orquestación por modo (adresles / tradicional); `POST /api/mock/conversations/:id/reply` — respuesta simulada; `GET /api/mock/conversations/:id/events` — SSE en tiempo real (Redis Pub/Sub)
-- `orders/`: Gestión del ciclo de vida de pedidos y cálculo de fee
+- `mock/`: `POST /api/mock/orders` — orquestación por modo (adresles / tradicional); `POST /api/mock/conversations/:id/reply` — respuesta del usuario (persiste mensaje en DynamoDB + encola job); `GET /api/mock/conversations/:id/events` — SSE en tiempo real (Redis Pub/Sub)
+- `orders/`: Gestión del ciclo de vida de pedidos, cálculo de fee y `ExternalOrderIdService` (generación determinista de IDs por plataforma)
 - `users/`: Búsqueda o creación de usuario por teléfono E.164
 - `conversations/`: Creación de conversación y encola job BullMQ
 - `stores/`: Búsqueda o creación de tienda por URL
 - `ecommerce-sync/`: Simulación de sincronización con eCommerce (mock)
-- `admin/`: Endpoints de visualización para el dashboard admin (`GET /admin/orders`, `GET /admin/users`, `GET /admin/stores`, `GET /admin/conversations/:id/messages`)
+- `admin/`: Endpoints de visualización para el dashboard admin (`GET /admin/orders`, `GET /admin/users`, `GET /admin/stores`, `GET /admin/addresses`, `GET /admin/conversations/:id/messages`)
 - `queue/`: Configuración de BullMQ (cola `process-conversation` y `process-response`)
 - `prisma/`: Módulo de acceso a base de datos (Prisma desde `@adresles/prisma-db`)
 
@@ -530,63 +525,54 @@ C4Container
 
 #### **Worker - Conversation Processor (BullMQ)**
 
-**Tecnología**: Node.js + BullMQ + TypeScript  
+**Tecnología**: Node.js puro (sin NestJS) + BullMQ + TypeScript  
 **Responsabilidades**:
 
 - Procesamiento asíncrono de jobs de conversación
-- Llamadas a OpenAI GPT-4 para generar respuestas
-- Construcción de prompts según journey y contexto
-- Parseo y validación de respuestas de IA
-- Programación de reminders (pendiente post-MVP)
+- Llamadas a OpenAI GPT-4o-mini para generar respuestas (vía abstracción `ILLMService`)
+- Máquina de estados de 9 fases para el journey conversacional
+- Validación y normalización de direcciones con Google Maps API
+- Formateo Markdown de respuestas del asistente
 
 **Procesadores y servicios principales**:
 
-- `processors/conversation.processor.ts`: Consume cola `process-conversation`; journeys `GET_ADDRESS` (llama a OpenAI, guarda en DynamoDB, publica en Redis), `INFORMATION` (confirmación tradicional); sub-journeys: propuesta de dirección guardada (2.1/2.3), registro voluntario (3.x), libreta de direcciones (offerSaveAddress, WAITING_SAVE_ADDRESS_LABEL)
-- `processors/response.processor.ts`: Máquina de estados para cola `process-response`; valida dirección con Google Maps, detecta edificios (solicita datos adicionales), confirma y sincroniza; interpreta intenciones (registro, guardar dirección)
-- `services/address.service.ts`: Integración con Google Maps API (mock en MVP)
-- `dynamodb/dynamodb.service.ts`: Escritura y lectura de mensajes en DynamoDB
+- `processors/conversation.processor.ts`: Consume colas `process-conversation` y `process-response`; journeys `GET_ADDRESS` (llama a OpenAI, guarda en DynamoDB, publica en Redis), `INFORMATION` (confirmación de compra tradicional con formato Markdown); sub-journeys: propuesta de dirección guardada (2.1/2.3), registro voluntario (3.x), libreta de direcciones (offerSaveAddress, WAITING_SAVE_ADDRESS_LABEL). Patrón single-writer: solo el Worker persiste mensajes del usuario (API encola sin reescribir)
+- `services/address.service.ts`: Integración con Google Maps API — valida dirección, detecta edificios (solicita datos adicionales como piso/puerta), confirma y sincroniza; interpreta intenciones del usuario (registro, guardar dirección)
+- `llm/llm.interface.ts`: Contrato `ILLMService` con 3 métodos: `generateMessage`, `extractAddress`, `interpretIntent`
+- `llm/openai-llm.service.ts`: Implementación con OpenAI `gpt-4o-mini` (temperature 0.7, max_tokens 500)
+- `llm/mock-llm.service.ts`: Implementación sin red para tests y desarrollo sin API key
+- `dynamodb/dynamodb.service.ts`: Escritura y lectura de mensajes en DynamoDB (tabla configurable vía `DYNAMODB_TABLE_NAME`)
 - `redis-publisher.ts`: Publica eventos en Redis (`conversation:{id}:update`) para SSE
 
 > 📖 **ADR BullMQ + Worker**: [memory-bank/architecture/005-bullmq-worker-conversations.md](./memory-bank/architecture/005-bullmq-worker-conversations.md)  
 > 📖 **Patrones Worker**: [memory-bank/patterns/worker-testing-patterns.md](./memory-bank/patterns/worker-testing-patterns.md)
 
-#### **Frontend - Chat App (React + Vite)**
+#### **Frontend - Chat App (React + Vite) — No implementada en MVP**
 
-**Tecnología**: React + Vite + TailwindCSS + Shadcn/ui  
-**Puerto**: 5173 (dev)  
-**Responsabilidades**:
-
-- Interfaz de conversación para usuarios (comprador/destinatario)
-- Conexión WebSocket en tiempo real con backend
-- Gestión de libreta de direcciones
-- Visualización de pedidos activos
-
-**Stack**:
-
-- **State Management**: Zustand
-- **API Client**: TanStack Query (React Query)
-- **WebSocket**: Socket.io client
-- **UI Components**: Shadcn/ui (sobre Radix UI)
+> La Chat App (`apps/web-chat/`) fue planificada pero **no implementada** en el MVP. La funcionalidad de simulación de conversaciones se integró directamente en el Dashboard Admin (`/simulate`), eliminando la necesidad de una aplicación separada para el MVP.
 
 #### **Frontend - Dashboard Admin (Next.js)**
 
 **Tecnología**: Next.js 16.1.6 + React 19 + Tailwind v4 + Shadcn/ui  
 **Puerto**: 3001 (dev)  
+**URL producción**: `https://simulator.adresles.com` (Vercel)  
 **Responsabilidades**:
 
 - Panel de visualización para administradores de eCommerce
 - Tabla de pedidos con ordenación, filtros (estado, modo, fecha, búsqueda) y enlace a chat
 - Tabla de usuarios con ordenación, filtros (registro, búsqueda) y tooltips accesibles
-- Visor de chat con burbujas por rol, metadatos de conversación y banner TTL
-- **Simulador** (`/simulate`): Configuración de pedido mock (usuario, tienda, modo), chat en vivo con SSE, indicador de escritura, badges de estado
+- **Tabla de direcciones** (`/addresses`) con ordenación, búsqueda, filtro de favoritas y chips de filtros activos
+- Visor de chat con burbujas por rol, **renderizado Markdown** (`react-markdown` + `remark-breaks`), metadatos de conversación y banner TTL
+- **Simulador** (`/simulate`): Configuración de pedido mock con **smart defaults** (preselección de tienda/usuario, filtro por tienda), chat en vivo con SSE, indicador de escritura, badges de estado
 
 **Stack**:
 
 - **Rendering**: Server Components + Client Components (mínimo client side)
 - **Estilos**: Tailwind v4 CSS-first (`@theme` en `globals.css`); tokens de marca `brand-black`, `brand-lime`, `brand-teal`
 - **UI Components**: Shadcn/ui (Radix UI)
+- **Chat Markdown**: `react-markdown` 9.x + `remark-gfm` + `remark-breaks` (componente `MarkdownMessage`)
 - **Accesibilidad**: WCAG 2.1 AA (`aria-label`, `scope="col"`, `role="log"`, tooltips, `focus-visible`)
-- **Deployment**: Vercel (free tier)
+- **Deployment**: Vercel (free tier) — `simulator.adresles.com`
 
 #### **Base de Datos - Arquitectura Híbrida**
 
@@ -642,9 +628,10 @@ C4Container
 
 #### **Servicios Externos**
 
-**OpenAI GPT-4**  
+**OpenAI GPT-4o-mini (vía abstracción `ILLMService`)**  
 **Propósito**: Motor de conversación inteligente  
-**Uso**: Generación de respuestas naturales, comprensión de direcciones, detección de intenciones
+**Uso**: Generación de respuestas naturales (`generateMessage`), extracción de direcciones (`extractAddress`), detección de intenciones (`interpretIntent`)  
+**Abstracción**: `ILLMService` permite intercambiar la implementación (OpenAI, Mock) sin modificar el procesador de conversaciones
 
 **Google Maps API (Geocoding)**  
 **Propósito**: Validación y normalización de direcciones  
@@ -680,20 +667,22 @@ adresles/
 │   │   ├── prisma.config.ts          # Apunta a packages/prisma-db
 │   │   └── package.json
 │   │
-│   ├── worker/                        # Worker BullMQ para conversaciones
+│   ├── worker/                        # Worker BullMQ + OpenAI (Node.js puro)
 │   │   ├── src/
 │   │   │   ├── processors/
-│   │   │   │   └── conversation.processor.ts  # Journeys, sub-journeys (propuesta dir, registro, libreta)
+│   │   │   │   └── conversation.processor.ts  # Journeys, sub-journeys, máquina de 9 fases
 │   │   │   ├── services/
-│   │   │   │   └── address.service.ts
+│   │   │   │   └── address.service.ts          # Google Maps API + interpretación de intenciones
+│   │   │   ├── llm/                             # Abstracción LLM (ADR-004 actualizado)
+│   │   │   │   ├── llm.interface.ts            # Contrato ILLMService
+│   │   │   │   ├── openai-llm.service.ts       # Implementación GPT-4o-mini
+│   │   │   │   └── mock-llm.service.ts         # Implementación sin red (tests)
 │   │   │   ├── dynamodb/
-│   │   │   │   └── dynamodb.service.ts         # Tabla configurada por DYNAMODB_TABLE_NAME (TTL 90d)
+│   │   │   │   └── dynamodb.service.ts         # Tabla configurable por DYNAMODB_TABLE_NAME (TTL 90d)
 │   │   │   ├── redis-publisher.ts               # Publica en Redis para SSE
-│   │   │   └── main.ts
+│   │   │   └── main.ts                          # Instancia OpenAI o Mock según OPENAI_API_KEY
+│   │   ├── Dockerfile                 # Multi-stage build (builder + runner Alpine)
 │   │   └── package.json              # prisma.schema → @adresles/prisma-db
-│   │
-│   ├── web-chat/                      # Frontend Chat (React + Vite) — pendiente
-│   │   └── package.json
 │   │
 │   └── web-admin/                     # Frontend Admin (Next.js 16)
 │       ├── src/
@@ -703,15 +692,17 @@ adresles/
 │       │   │   ├── page.tsx           # Redirect a /orders
 │       │   │   ├── orders/            # Tabla pedidos + ordenación + filtros
 │       │   │   ├── users/             # Tabla usuarios + ordenación + filtros
-│       │   │   ├── simulate/          # Simulador de chat (config + chat SSE)
-│       │   │   └── conversations/[conversationId]/  # Visor de chat con burbujas
+│       │   │   ├── addresses/         # Tabla direcciones + ordenación + filtros + favoritas
+│       │   │   ├── simulate/          # Simulador de chat (config + chat SSE + smart defaults)
+│       │   │   └── conversations/[conversationId]/  # Visor de chat con burbujas Markdown
 │       │   ├── components/
 │       │   │   ├── ui/                # Shadcn/ui
 │       │   │   ├── layout/            # Sidebar, Providers
 │       │   │   ├── orders/            # OrdersTable, filtros, badges
 │       │   │   ├── users/             # UsersTable, filtros, RelativeDateCell
+│       │   │   ├── addresses/         # AddressesTable, filtros, badges favorita
 │       │   │   ├── simulate/          # OrderConfigModal, SimulationChat, UserCombobox
-│       │   │   └── chat/              # ChatView, ChatBubble, ChatExpiryBanner
+│       │   │   └── chat/              # ChatView, ChatBubble, MarkdownMessage, ChatExpiryBanner
 │       │   ├── lib/
 │       │   └── types/
 │       └── package.json
@@ -741,15 +732,18 @@ adresles/
 │
 ├── memory-bank/                       # Contexto persistente
 │   ├── project-context/               # overview, tech-stack, domain-glossary
-│   ├── architecture/                  # ADRs 001-009
-│   ├── patterns/                      # validation, real-time-sse, frontend-form, prisma-shared, worker-testing
-│   ├── sessions/                      # Sesiones por change
+│   ├── architecture/                  # ADRs 001-011 (incluye 010-DynamoDB AWS, 011-Docker+ECR+Lightsail+Caddy)
+│   ├── patterns/                      # validation, real-time-sse, frontend-form, prisma-shared, worker-testing,
+│   │                                  # admin-table-page, conversation-message-single-writer, chat-markdown
+│   ├── sessions/                      # 27 sesiones documentadas (2026-02-18 a 2026-03-16)
 │   └── references/
 │       └── business-doc-map.md
 │
 ├── openspec/
 │   ├── specs/                         # Estándares, data-model
-│   └── changes/archive/              # Changes completados (CU-01, CU-02, T01-T03, CU03-A1-A6, CU03-B1-B4, infra)
+│   └── changes/archive/              # Changes completados (CU-01, CU-02, T01-T03, CU03-A1-A6, CU03-B1-B4, infra,
+│                                      # llm-service-abstraction, fix-information-journey, admin-addresses-page,
+│                                      # external-order-id-coherence, chat-markdown-rendering, smart-defaults, ...)
 │
 ├── apps/api/Dockerfile                # Multi-stage build (builder Alpine + runner Alpine + openssl)
 ├── apps/worker/Dockerfile             # Multi-stage build (builder Alpine + runner Alpine + openssl)
@@ -794,7 +788,7 @@ El backend sigue principios de DDD con **Bounded Contexts** claros:
 
 > 📖 **Estructura completa**: [Adresles_Business.md - Sección 4.5](./Adresles_Business.md#45-estructura-del-proyecto)  
 > 📖 **Backend Standards**: [/.cursor/rules/backend-standards.mdc](./.cursor/rules/backend-standards.mdc)  
-> 📖 **Changes archivados**: [openspec/changes/archive/](./openspec/changes/archive/) — CU-01, CU-02, T01-T03, CU03-A1-A6, CU03-B1-B4, infra-prisma-shared-schema
+> 📖 **Changes archivados**: [openspec/changes/archive/](./openspec/changes/archive/) — CU-01, CU-02, T01-T03, CU03-A1-A6, CU03-B1-B4, infra, llm-service-abstraction, admin-addresses-page, external-order-id-coherence, chat-markdown-rendering y más
 
 ### **2.4. Infraestructura y despliegue**
 
@@ -803,41 +797,39 @@ El backend sigue principios de DDD con **Bounded Contexts** claros:
 ```mermaid
 flowchart TB
     subgraph "Internet"
-        U[Usuarios]
+        U[Usuarios / Admin]
         WH[Webhooks eCommerce]
     end
 
     subgraph "CDN (Vercel)"
-        FE_ADMIN[Dashboard Admin<br/>Next.js SSR]
+        FE_ADMIN[Dashboard Admin<br/>Next.js 16 SSR<br/>simulator.adresles.com]
     end
 
-    subgraph "Servidor Dedicado (Konsole H)"
+    subgraph "AWS Lightsail (52.57.222.42)"
         subgraph "Docker Compose"
-            TR[Traefik<br/>Reverse Proxy<br/>SSL Let's Encrypt]
+            CD[Caddy 2<br/>Reverse Proxy<br/>HTTPS Let's Encrypt<br/>backend.adresles.com]
 
             subgraph "Aplicaciones"
-                FE_CHAT[Chat App<br/>React SPA<br/>Nginx]
-                API[API Backend<br/>NestJS<br/>Port 3000]
-                WK[Worker<br/>BullMQ<br/>Port 3001]
+                API[API Backend<br/>NestJS 10<br/>Port 3000]
+                WK[Worker<br/>BullMQ + OpenAI<br/>Node.js puro]
             end
 
-            RD[(Redis<br/>Cache + Queue<br/>Port 6379)]
+            RD[(Redis 7<br/>Colas + Pub/Sub<br/>Port 6379)]
         end
     end
 
     subgraph "Servicios Managed"
         SB[(Supabase<br/>PostgreSQL)]
-        DY[(AWS DynamoDB)]
-        OAI[OpenAI API]
+        DY[(AWS DynamoDB<br/>eu-central-1)]
+        OAI[OpenAI API<br/>GPT-4o-mini]
         GM[Google Maps API]
     end
 
-    U --> TR
-    WH --> TR
+    U --> CD
+    WH --> CD
     U --> FE_ADMIN
 
-    TR --> FE_CHAT
-    TR --> API
+    CD --> API
     FE_ADMIN --> API
 
     API --> RD
@@ -845,50 +837,56 @@ flowchart TB
 
     API --> SB
     API --> DY
-    API --> GM
     WK --> DY
     WK --> OAI
+    WK --> GM
 ```
 
 #### **Componentes de Infraestructura**
 
-**Traefik (Reverse Proxy)**
+**Caddy 2 (Reverse Proxy)**
 
-- **Función**: Enrutamiento de tráfico, SSL automático con Let's Encrypt
-- **Puertos**: 80 (HTTP), 443 (HTTPS)
-- **Ventajas**: Integración nativa con Docker, SSL automático, dashboards
+- **Función**: Enrutamiento de tráfico, HTTPS automático con Let's Encrypt
+- **Puertos**: 80 (HTTP → redirect 443), 443 (HTTPS TLS 1.3)
+- **Configuración**: `Caddyfile` → `backend.adresles.com` → `reverse_proxy api:3000`
+- **Ventajas**: Zero-config HTTPS, renovación automática de certificados, mínima configuración
 
-**Servidor Dedicado (Konsole H)**
+**AWS Lightsail (Servidor de Producción)**
 
-- **Especificaciones**: (Por definir en fase de implementación)
-- **Sistema Operativo**: Linux (Ubuntu/Debian)
-- **Servicios alojados**: API Backend, Worker, Chat App, Redis
-- **Ventaja**: Coste fijo predecible, control total
+- **Plan**: `small_3_0` — 2 GB RAM, 2 vCPU, $12/mes
+- **Sistema Operativo**: Ubuntu 22.04 LTS
+- **IP estática**: `52.57.222.42`
+- **Servicios alojados**: API Backend, Worker, Redis, Caddy (todos vía Docker Compose)
+- **Ventaja**: Coste fijo predecible, IP estática incluida, integración nativa con ECR
+
+**AWS ECR (Container Registry)**
+
+- **Repositorios**: `adresles-api`, `adresles-worker` (privados)
+- **Región**: `eu-central-1`
+- **Flujo**: GitHub Actions build → push ECR → SSH deploy Lightsail
 
 **Vercel (Frontend Admin)**
 
-- **Plan**: Free tier (escalable a Pro si necesario)
+- **Plan**: Free tier
+- **URL**: `simulator.adresles.com`
 - **Características**: CDN global, deploy automático desde Git, SSL incluido
 - **Ventaja**: SSR optimizado para Next.js, zero-config
 
 #### **Proceso de Despliegue (CI/CD con GitHub Actions)**
 
-**Pipeline Automatizado**:
+**Pipeline Automatizado** (`.github/workflows/deploy.yml`):
 
-1. **Trigger**: Push a rama `main` o ejecución manual
-2. **Job 1 - Tests**: Ejecuta linter + tests unitarios
-3. **Job 2 - Build**: Construye imágenes Docker y las publica en GitHub Container Registry
-4. **Job 3 - Deploy**:
-    - Copia docker-compose.yml al servidor vía SSH
-    - Ejecuta `docker compose pull` para descargar nuevas imágenes
-    - Ejecuta `docker compose up -d` para reiniciar servicios
-    - Limpia imágenes antiguas
+1. **Trigger**: Push a rama `main`
+2. **Step 1 - ECR Login**: Autenticación con AWS ECR (`eu-central-1`) usando IAM user `Cursor-Deployer`
+3. **Step 2 - Build & Push**: Construye imágenes Docker multi-stage y las publica en AWS ECR (`adresles-api`, `adresles-worker`)
+4. **Step 3 - SSH Deploy**: Conecta al servidor Lightsail (`52.57.222.42`) vía SSH, ejecuta `docker compose pull` + `docker compose up -d` + limpieza de imágenes
 
-**Comandos principales**:
+**Comandos en servidor**:
 
 ```bash
-# En servidor (vía GitHub Actions SSH)
-cd /opt/adresles
+# En servidor Lightsail (vía GitHub Actions SSH)
+cd ~/adresles-prod
+aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
 docker compose pull
 docker compose up -d --remove-orphans
 docker image prune -f
@@ -896,12 +894,13 @@ docker image prune -f
 
 **Secrets requeridos en GitHub**:
 
-- `SERVER_HOST`: IP o dominio del servidor
-- `SERVER_USER`: Usuario SSH (ej: `deploy`)
-- `SERVER_SSH_KEY`: Clave privada SSH
+- `AWS_ACCOUNT_ID`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`: Credenciales IAM para ECR
+- `LIGHTSAIL_HOST`: IP del servidor (`52.57.222.42`)
+- `LIGHTSAIL_SSH_KEY`: Clave privada SSH para usuario `ubuntu`
 
-> 📖 **CI/CD completo**: [Adresles_Business.md - Sección 4.9](./Adresles_Business.md#49-cicd-pipeline-github-actions)  
-> 📖 **Docker Compose YAML**: [Adresles_Business.md - Sección 4.7](./Adresles_Business.md#47-docker-compose---configuración)
+> 📖 **ADR-011 (Despliegue producción)**: [memory-bank/architecture/011-docker-ecr-lightsail-caddy.md](./memory-bank/architecture/011-docker-ecr-lightsail-caddy.md)  
+> 📖 **Pipeline YAML**: [.github/workflows/deploy.yml](./.github/workflows/deploy.yml)  
+> 📖 **Docker Compose prod**: [infrastructure/docker/docker-compose.prod.yml](./infrastructure/docker/docker-compose.prod.yml)
 
 ### **2.5. Seguridad**
 
@@ -910,44 +909,42 @@ docker image prune -f
 **Capa 1: Perímetro**
 
 - **Firewall**: UFW configurado, solo puertos 80, 443, 22 abiertos
-- **SSL/TLS**: Certificados Let's Encrypt renovados automáticamente vía Traefik
-- **Rate Limiting**: Traefik middleware para limitar peticiones por IP
+- **SSL/TLS**: Certificados Let's Encrypt renovados automáticamente vía Caddy 2 (TLS 1.3)
+- **HTTPS forzado**: Caddy redirige automáticamente HTTP → HTTPS
 
 **Capa 2: Aplicación**
 
-- **Autenticación**: JWT tokens gestionados por Supabase Auth
-- **API Keys**: Para webhooks de eCommerce (validación HMAC)
-- **Validación de entrada**: DTOs con class-validator + Zod en NestJS
-- **CORS**: Whitelist de dominios permitidos
-- **Helmet**: Headers de seguridad HTTP
+- **Autenticación**: JWT tokens gestionados por Supabase Auth (planificado para post-MVP)
+- **API Keys**: Para webhooks de eCommerce (validación HMAC, planificado)
+- **Validación de entrada**: DTOs con `class-validator` + `class-transformer` en NestJS (`ValidationPipe` global con `whitelist`, `forbidNonWhitelisted`, `transform`)
+- **CORS**: Habilitado en `main.ts` con orígenes permitidos
+- **IAM DynamoDB**: Principio de mínimo privilegio — cada entorno tiene su propio IAM User (`adresles-app-dev`, `adresles-app-prod`) con permisos limitados a `PutItem`, `GetItem`, `Query`, `UpdateItem` sobre su tabla específica
 
 **Capa 3: Datos**
 
-- **Row Level Security (RLS)**: Políticas de Supabase para aislamiento multi-tenant
+- **Row Level Security (RLS)**: Políticas de Supabase para aislamiento multi-tenant (diseñado)
 - **Encriptación**:
-    - At rest: Supabase automático
-    - In transit: TLS obligatorio
-- **Audit Log**: Registro de todas las operaciones críticas en DynamoDB
+    - At rest: Supabase automático + DynamoDB automático
+    - In transit: TLS obligatorio (Caddy + Supabase + DynamoDB)
+- **Secrets management**: `.env.prod` en servidor (no comiteado), GitHub Secrets para CI/CD
 
 #### **Prácticas de Seguridad Implementadas**
 
-| Área        | Medida               | Implementación                      |
-| ----------- | -------------------- | ----------------------------------- |
-| **Red**     | Firewall             | UFW: solo 80, 443, 22               |
-| **Red**     | SSL/TLS              | Let's Encrypt via Traefik           |
-| **Red**     | Rate limiting        | Traefik middleware                  |
-| **Auth**    | JWT tokens           | Supabase Auth                       |
-| **Auth**    | API Keys             | Para webhooks de eCommerce          |
-| **Auth**    | Webhook signatures   | Validar HMAC de cada plataforma     |
-| **API**     | Input validation     | class-validator + Zod               |
-| **API**     | CORS                 | Whitelist de dominios               |
-| **API**     | Helmet               | Headers de seguridad                |
-| **DB**      | Row Level Security   | Supabase RLS policies               |
-| **DB**      | Encriptación         | Supabase (at rest), TLS (transit)   |
-| **Secrets** | Variables de entorno | .env en servidor, no en repo        |
-| **Secrets** | Rotación             | API keys rotables                   |
-| **Audit**   | Logging              | Todos los cambios en AuditLog       |
-| **Backup**  | Base de datos        | Supabase automático + DynamoDB PITR |
+| Área        | Medida               | Implementación                      | Estado        |
+| ----------- | -------------------- | ----------------------------------- | ------------- |
+| **Red**     | Firewall             | UFW: solo 80, 443, 22               | ✅ Producción |
+| **Red**     | SSL/TLS              | Let's Encrypt via Caddy 2 (TLS 1.3) | ✅ Producción |
+| **Auth**    | JWT tokens           | Supabase Auth                       | 🔄 Post-MVP  |
+| **Auth**    | API Keys             | Para webhooks de eCommerce          | 🔄 Post-MVP  |
+| **Auth**    | Webhook signatures   | Validar HMAC de cada plataforma     | 🔄 Post-MVP  |
+| **API**     | Input validation     | `class-validator` + `ValidationPipe` global | ✅ Producción |
+| **API**     | CORS                 | Habilitado en `main.ts`             | ✅ Producción |
+| **DB**      | Row Level Security   | Supabase RLS policies               | 🔄 Post-MVP  |
+| **DB**      | IAM mínimo privilegio | IAM Users por entorno (`PutItem`, `GetItem`, `Query`, `UpdateItem`) | ✅ Producción |
+| **DB**      | Encriptación         | Supabase + DynamoDB (at rest), TLS (transit) | ✅ Producción |
+| **Secrets** | Variables de entorno | `.env.prod` en servidor, GitHub Secrets CI/CD | ✅ Producción |
+| **Secrets** | Aislamiento          | Archivos `.env.dev` y `.env.prod` no comiteados | ✅ Producción |
+| **Backup**  | Base de datos        | Supabase automático + DynamoDB PITR | ✅ Producción |
 
 #### **Ejemplo de RLS Policy (Supabase)**
 
@@ -981,28 +978,30 @@ CREATE POLICY "orders_isolation" ON "order"
 
 #### **Tests implementados — Backend API (apps/api)**
 
-**CU-01, CU-02, CU03-A1-A6 — Tests API, 100% pasan**
+**13 archivos de tests — 100% pasan**
 
 | Archivo | Tests | Cobertura |
 |---------|-------|-----------|
 | `src/orders/orders.service.spec.ts` | `createFromMock`, `updateStatus`, `createAddressFromConversation` | Servicio de pedidos |
+| `src/orders/external-order-id.service.spec.ts` | Generación determinista de `externalOrderId` por plataforma | ExternalOrderIdService |
 | `src/users/users.service.spec.ts` | `findOrCreateByPhone` | Servicio de usuarios |
+| `src/shared/fee.utils.spec.ts` | Cálculo de fee variable (2.5%-5%) | Utilidades compartidas |
 | `src/mock/mock-orders.service.spec.ts` | Orquestación modos adresles y tradicional | Orquestación mock |
 | `src/mock/mock-orders.controller.spec.ts` | HTTP `supertest`; validación 400 | Controller HTTP |
+| `src/mock/mock-conversations.controller.spec.ts` | Reply HTTP + validación | Controller conversaciones |
 | `src/mock/mock-sse.service.spec.ts` | Suscripción Redis, filtro por conversationId | SSE + Pub/Sub |
-| `src/admin/admin.service.spec.ts` | Paginación, filtrado, datos relacionales | Admin service |
+| `src/admin/admin.service.spec.ts` | Paginación, filtrado, datos relacionales, direcciones | Admin service |
 | `src/admin/admin.controller.spec.ts` | Integración HTTP endpoints admin | Admin controller |
 
 #### **Tests implementados — Worker (apps/worker)**
 
-**CU03-B1-B4 — Tests Worker, 100% pasan**
+**3 archivos de tests — 100% pasan**
 
 | Archivo | Tests |
 |---------|-------|
-| `src/processors/conversation.processor.spec.ts` | Journeys GET_ADDRESS, INFORMATION; sub-journeys (propuesta dirección, registro, libreta) |
-| `src/services/address.service.spec.ts` | Validación Google Maps (mock) |
+| `src/processors/conversation.processor.spec.ts` | Journeys GET_ADDRESS, INFORMATION; sub-journeys (propuesta dirección, registro, libreta); inyección `ILLMService` vía `setLLMService()` |
+| `src/services/address.service.spec.ts` | Validación Google Maps, detección edificios, interpretación de intenciones |
 | `src/redis-publisher.spec.ts` | `publishConversationUpdate`, `publishConversationComplete` |
-| `src/dynamodb/dynamodb.service.spec.ts` | saveMessage, getMessages |
 
 > 📖 **Patrón testing Worker**: [memory-bank/patterns/worker-testing-patterns.md](./memory-bank/patterns/worker-testing-patterns.md)
 
@@ -1196,38 +1195,35 @@ erDiagram
     }
 ```
 
-#### **Modelo de Conversaciones (DynamoDB)**
+#### **Modelo de Conversaciones (DynamoDB) — Esquema Implementado**
 
-**Tabla: Conversations**
+> **Nota**: El esquema real difiere del diseño original en `Adresles_Business.md`. En la implementación se usa una **tabla única** (`adresles-messages`) con claves simples y sin GSIs, priorizando simplicidad para el MVP. Ver [ADR-002 (actualizado)](./memory-bank/architecture/002-supabase-dynamodb.md) y [ADR-010](./memory-bank/architecture/010-dynamodb-aws-multienv.md).
 
-| Atributo            | Tipo   | Key           | Descripción                                                                      |
-| ------------------- | ------ | ------------- | -------------------------------------------------------------------------------- |
-| `PK`                | String | Partition Key | `CONV#{conversation_id}`                                                         |
-| `SK`                | String | Sort Key      | `METADATA`                                                                       |
-| `conversation_id`   | String |               | UUID de la conversación                                                          |
-| `order_id`          | String | GSI1-PK       | UUID del pedido                                                                  |
-| `user_phone`        | String | GSI2-PK       | Teléfono del usuario                                                             |
-| `user_type`         | String |               | `BUYER` \| `RECIPIENT`                                                           |
-| `conversation_type` | String |               | `INFORMATION` \| `GET_ADDRESS` \| `REGISTER` \| `GIFT_NOTIFICATION` \| `SUPPORT` |
-| `status`            | String |               | `ACTIVE` \| `WAITING_RESPONSE` \| `COMPLETED` \| `ESCALATED` \| `TIMEOUT`        |
-| `language`          | String |               | Código de idioma detectado                                                       |
-| `journey_type`      | String |               | Tipo de journey activo                                                           |
-| `context`           | Map    |               | Contexto acumulado para el LLM                                                   |
-| `created_at`        | String |               | ISO timestamp                                                                    |
-| `ttl`               | Number |               | Epoch para metadata (2 años)                                                     |
+**Tabla única: `adresles-messages`** (nombre configurable vía `DYNAMODB_TABLE_NAME`)
 
-**Tabla: Messages**
+| Atributo         | Tipo   | Key           | Descripción                                                                      |
+| ---------------- | ------ | ------------- | -------------------------------------------------------------------------------- |
+| `conversationId` | String | Partition Key | UUID de la conversación (Prisma)                                                 |
+| `messageId`      | String | Sort Key      | Timestamp dinámico (ISO 8601) para mensajes, o valor reservado `__state__` para estado del Worker |
+| `role`           | String |               | `'system'` \| `'user'` \| `'assistant'`                                          |
+| `content`        | String |               | Texto del mensaje (puede incluir Markdown)                                       |
+| `timestamp`      | String |               | ISO 8601                                                                         |
+| `expiresAt`      | Number |               | **TTL automático** — Unix timestamp, 90 días desde creación (DynamoDB borra automáticamente) |
+| `state`          | String |               | JSON serializado del estado del Worker (solo cuando `messageId = '__state__'`)    |
 
-| Atributo     | Tipo   | Key           | Descripción                       |
-| ------------ | ------ | ------------- | --------------------------------- |
-| `PK`         | String | Partition Key | `CONV#{conversation_id}`          |
-| `SK`         | String | Sort Key      | `MSG#{ulid}`                      |
-| `message_id` | String |               | ULID del mensaje                  |
-| `role`       | String |               | `USER` \| `ASSISTANT` \| `SYSTEM` |
-| `content`    | String |               | Contenido del mensaje             |
-| `metadata`   | Map    |               | Metadata adicional (tokens, etc.) |
-| `timestamp`  | String |               | ISO timestamp                     |
-| `ttl`        | Number |               | Epoch para auto-delete (90 días)  |
+**Uso dual de la tabla**:
+- **Mensajes**: Items con `messageId` = timestamp ISO 8601. Atributos: `role`, `content`, `timestamp`, `expiresAt`
+- **Estado del Worker**: Item con `messageId` = `'__state__'`. Atributo `state` contiene JSON con fase actual, dirección pendiente, historial de sub-journeys
+
+**Sin GSIs**: El MVP no requiere búsquedas por `order_id` o `user_phone` en DynamoDB; esas consultas se realizan en PostgreSQL (Prisma)
+
+**Entornos**:
+
+| Entorno | Tabla | Región | IAM User |
+|---------|-------|--------|----------|
+| Local (Docker) | `adresles-messages` | — | Credenciales ficticias |
+| Dev (AWS) | `adresles-messages-dev` | `eu-west-1` | `adresles-app-dev` |
+| Prod (AWS) | `adresles-messages-prod` | `eu-central-1` | `adresles-app-prod` |
 
 #### **Política de Retención de Datos**
 
@@ -1527,7 +1523,7 @@ stateDiagram-v2
 
 ## 4. Especificación de la API
 
-El backend expone una API REST + WebSocket para comunicación en tiempo real. A continuación se describen 3 endpoints principales en formato OpenAPI.
+El backend expone una API REST + SSE (Server-Sent Events) para comunicación en tiempo real. A continuación se describen 3 endpoints principales en formato OpenAPI.
 
 ### **Endpoint 1: Recibir Pedido Mock desde eCommerce**
 
@@ -1539,7 +1535,7 @@ El backend expone una API REST + WebSocket para comunicación en tiempo real. A 
             Endpoint de entrada manual que simula la recepción de un pedido desde
             un eCommerce. Orquesta el flujo según el modo (adresles / tradicional).
             En modo adresles crea la Order en PENDING_ADDRESS e inicia una
-            conversación GET_ADDRESS con GPT-4. En modo tradicional crea la Order
+            conversación GET_ADDRESS con GPT-4o-mini. En modo tradicional crea la Order
             en READY_TO_PROCESS con OrderAddress incluida y la marca COMPLETED.
         requestBody:
             required: true
@@ -1721,7 +1717,7 @@ El backend expone una API REST + WebSocket para comunicación en tiempo real. A 
         summary: Envía mensaje del usuario en una conversación
         description: |
             El usuario responde en la conversación activa. 
-            El sistema procesa el mensaje con GPT-4 y genera respuesta.
+            El sistema procesa el mensaje con GPT-4o-mini y genera respuesta.
         security:
             - bearerAuth: []
         parameters:
@@ -2035,6 +2031,34 @@ El backend expone una API REST + WebSocket para comunicación en tiempo real. A 
             "200":
                 description: Lista paginada de usuarios
 
+/admin/addresses:
+    get:
+        summary: Lista direcciones con paginación, filtros y ordenación
+        parameters:
+            - name: page
+              in: query
+              schema: { type: integer, default: 1 }
+            - name: limit
+              in: query
+              schema: { type: integer, default: 20 }
+            - name: search
+              in: query
+              schema: { type: string }
+              description: Búsqueda por full_address, label, city
+            - name: isDefault
+              in: query
+              schema: { type: string, enum: ['true', 'false'] }
+              description: Filtro por dirección favorita
+            - name: sortBy
+              in: query
+              schema: { type: string, default: createdAt }
+            - name: sortDir
+              in: query
+              schema: { type: string, enum: [asc, desc], default: desc }
+        responses:
+            "200":
+                description: Lista paginada de direcciones con datos de usuario
+
 /admin/conversations/{conversationId}/messages:
     get:
         summary: Devuelve mensajes de una conversación con contexto
@@ -2080,7 +2104,7 @@ components:
 
 ## 5. Historias de Usuario
 
-> ⚠️ **Estado**: El proyecto se encuentra en fase de diseño y documentación. Las historias de usuario se definirán detalladamente durante la fase de implementación.
+> ✅ **Estado**: El MVP está implementado y desplegado en producción. Las historias de usuario 1 y 3 están implementadas; la historia 2 (modo regalo) queda como roadmap post-MVP.
 
 A continuación se presentan 3 historias de usuario principales basadas en los casos de uso diseñados:
 
@@ -2128,7 +2152,7 @@ A continuación se presentan 3 historias de usuario principales basadas en los c
 
 **Prioridad**: ALTA (Core del producto)  
 **Puntos de Historia**: 13 (Epic - se descompondrá en subtareas)  
-**Dependencies**: Integración OpenAI GPT-4, Google Maps API, Supabase Auth
+**Dependencies**: Integración OpenAI GPT-4o-mini, Google Maps API, Supabase Auth
 
 > 📖 **Caso de Uso detallado**: [Adresles_Business.md - CU-02](./Adresles_Business.md#23-caso-de-uso-2-obtención-de-dirección-por-conversación)
 
@@ -2542,4 +2566,58 @@ Transformación de la planificación documental (Etapa 1) en un **Monorepo funci
 
 ---
 
-### **Pull Request 3:**
+### **Pull Request 3: MVP en Producción — Etapa 3 Final**
+
+#### 📋 Información General
+
+- **Rama origen**: `finalproject-SVL-v3`
+- **Rama destino**: `main` de LIDR-academy/AI4Devs-finalproject
+- **Autor**: Sergio Valdueza Lozano
+- **Fecha**: 19 de marzo de 2026
+- **Tipo de cambio**: Feature + Architecture + Deployment
+- **Estado**: ✅ Listo para revisión y merge
+- **Link**: [Ver PR completa](./PR%2020260319.md)
+
+#### 🎯 Resumen Ejecutivo
+
+Transformación del Monorepo Mock (Etapa 2) en un **MVP completamente funcional desplegado en producción**. Incluye:
+
+- **IA real en producción**: Worker conectado a OpenAI `gpt-4o-mini` con abstracción `ILLMService` (`OpenAILLMService` + `MockLLMService`)
+- **Infraestructura completa**: Docker multi-stage → AWS ECR → Lightsail + Caddy HTTPS → `backend.adresles.com`; Dashboard Admin en Vercel → `simulator.adresles.com`
+- **DynamoDB en AWS**: Migración de DynamoDB Local a tablas en AWS con entornos separados (dev `eu-west-1`, prod `eu-central-1`) e IAM de mínimo privilegio
+- **Dashboard Admin mejorado**: Página `/addresses`, renderizado Markdown en chat (`react-markdown` + `remark-breaks`), smart defaults en simulador, `externalOrderId` como referencia única
+- **CI/CD**: GitHub Actions → ECR push → SSH deploy a Lightsail
+
+#### 📊 Estadísticas de Cambios
+
+```
+174 archivos modificados/añadidos
+~23,981 líneas añadidas (+)
+~1,227 líneas eliminadas (-)
+20 commits
+```
+
+#### 🎯 ADRs Incorporados (010-011) + Actualizaciones
+
+| ADR | Título | Acción |
+|-----|--------|--------|
+| [010](./memory-bank/architecture/010-dynamodb-aws-multienv.md) | DynamoDB en AWS con Entornos Separados e IAM Mínimo Privilegio | **Nuevo** |
+| [011](./memory-bank/architecture/011-docker-ecr-lightsail-caddy.md) | Despliegue Producción — Docker + ECR + Lightsail + Caddy | **Nuevo** |
+| [001](./memory-bank/architecture/001-monolith-modular.md) | Monolito Modular | Actualizado — Worker es Node.js puro; nuevos módulos documentados |
+| [002](./memory-bank/architecture/002-supabase-dynamodb.md) | DB Híbrida | Actualizado — esquema DynamoDB real (sin GSIs, `__state__`, `expiresAt`) |
+| [003](./memory-bank/architecture/003-nestjs-backend.md) | NestJS Backend | Actualizado — SSE + Redis Pub/Sub reemplaza Socket.io |
+| [004](./memory-bank/architecture/004-openai-gpt4.md) | OpenAI GPT-4 | Actualizado — modelo `gpt-4o-mini`; abstracción `ILLMService` implementada |
+
+#### 🚀 Principales Cambios
+
+1. **Motor IA real**: Abstracción `ILLMService` → `OpenAILLMService` (GPT-4o-mini) + `MockLLMService`; builders de mensaje con Markdown
+2. **Infraestructura producción**: Dockerfiles multi-stage, Docker Compose prod, Caddyfile, GitHub Actions CI/CD
+3. **DynamoDB AWS**: Tablas por entorno, IAM de mínimo privilegio, scripts de validación
+4. **Dashboard Admin**: Página `/addresses`, renderizado Markdown en chat, smart defaults, `ExternalOrderIdService`
+5. **Estándares y documentación**: Memory-Bank actualizado con 11 ADRs, 8 patrones, 27 sesiones
+
+#### 📚 Referencias
+
+- **Documentación completa**: [PR 20260319.md](./PR%2020260319.md)
+- **Memory-Bank**: [memory-bank/README.md](./memory-bank/README.md)
+- **Sesiones v3**: [memory-bank/sessions/](./memory-bank/sessions/) (2026-03-08 a 2026-03-16)

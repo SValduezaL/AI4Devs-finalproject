@@ -79,7 +79,7 @@ Este mapa te ayuda a encontrar rápidamente información específica en el docum
 | **C4 - Contenedores** | [4.3 Diagrama C4 Nivel 2](../../Adresles_Business.md#43-diagrama-c4---nivel-2-contenedores) | API, Worker, Frontends, BD, Redis |
 | **C4 - Componentes** | [4.4 Diagrama C4 Nivel 3](../../Adresles_Business.md#44-diagrama-c4---nivel-3-componentes-módulo-conversations) | Detalle módulo Conversations |
 | **Estructura del proyecto** | [4.5 Estructura del Proyecto](../../Adresles_Business.md#45-estructura-del-proyecto) | Monorepo pnpm + Turborepo, carpetas completas |
-| **Infraestructura** | [4.6 Diagrama de Infraestructura](../../Adresles_Business.md#46-diagrama-de-infraestructura-y-deployment) | Servidor dedicado, Docker, Traefik, servicios managed |
+| **Infraestructura** | [4.6 Diagrama de Infraestructura](../../Adresles_Business.md#46-diagrama-de-infraestructura-y-deployment) | AWS Lightsail, Docker, Caddy 2, servicios managed (Business.md dice Traefik — ver [ADR-011](../architecture/011-docker-ecr-lightsail-caddy.md)) |
 | **Docker Compose** | [4.7 Docker Compose](../../Adresles_Business.md#47-docker-compose---configuración) | Configuración completa YAML |
 | **Diagramas de secuencia** | [4.8 Diagramas de Secuencia](../../Adresles_Business.md#48-diagramas-de-secuencia) | Secuencia 1: Procesar Compra Mock (actualizado), Secuencia 2 eliminada |
 | **CI/CD Pipeline** | [4.9 CI/CD Pipeline](../../Adresles_Business.md#49-cicd-pipeline-github-actions) | GitHub Actions workflow completo |
@@ -105,9 +105,9 @@ Este mapa te ayuda a encontrar rápidamente información específica en el docum
 - **Node.js + NestJS**: [4.1](../../Adresles_Business.md#41-visión-general-de-la-arquitectura), [4.5](../../Adresles_Business.md#45-estructura-del-proyecto)
 - **Supabase**: [3.1](../../Adresles_Business.md#31-análisis-de-base-de-datos-dynamodb-vs-alternativas), [3.3](../../Adresles_Business.md#33-diccionario-de-datos)
 - **DynamoDB**: [3.1](../../Adresles_Business.md#31-análisis-de-base-de-datos-dynamodb-vs-alternativas), [3.3 Messages](../../Adresles_Business.md#33-diccionario-de-datos)
-- **OpenAI GPT-4**: [1.1](../../Adresles_Business.md#11-descripción-del-software), [Decisión 30/01](../../Adresles_Business.md#registro-de-decisiones)
+- **OpenAI GPT-4o-mini** (req. original GPT-4): [1.1](../../Adresles_Business.md#11-descripción-del-software), [Decisión 30/01](../../Adresles_Business.md#registro-de-decisiones), [ADR-004](../architecture/004-openai-gpt4.md)
 - **Google Maps API**: [1.3](../../Adresles_Business.md#13-ventajas-competitivas), [2.3 CU-02](../../Adresles_Business.md#23-caso-de-uso-2-obtención-de-dirección-por-conversación)
-- **Docker + Traefik**: [4.6](../../Adresles_Business.md#46-diagrama-de-infraestructura-y-deployment), [4.7](../../Adresles_Business.md#47-docker-compose---configuración)
+- **Docker + Caddy** (Business.md dice Traefik, producción real usa Caddy): [4.6](../../Adresles_Business.md#46-diagrama-de-infraestructura-y-deployment), [4.7](../../Adresles_Business.md#47-docker-compose---configuración), [ADR-011](../architecture/011-docker-ecr-lightsail-caddy.md)
 - **BullMQ + Redis**: [4.3](../../Adresles_Business.md#43-diagrama-c4---nivel-2-contenedores), [Decisión 30/01](../../Adresles_Business.md#registro-de-decisiones)
 
 ### Funcionalidades

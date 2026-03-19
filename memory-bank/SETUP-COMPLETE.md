@@ -51,7 +51,7 @@ memory-bank/
 6. **[architecture/001-monolith-modular.md](./architecture/001-monolith-modular.md)** - Monolito Modular vs Microservicios
 7. **[architecture/002-supabase-dynamodb.md](./architecture/002-supabase-dynamodb.md)** - Arquitectura DB Híbrida
 8. **[architecture/003-nestjs-backend.md](./architecture/003-nestjs-backend.md)** - NestJS como Framework Backend
-9. **[architecture/004-openai-gpt4.md](./architecture/004-openai-gpt4.md)** - OpenAI GPT-4 para Conversaciones
+9. **[architecture/004-openai-gpt4.md](./architecture/004-openai-gpt4.md)** - OpenAI GPT-4o-mini para Conversaciones (abstracción `ILLMService`)
 
 ### 📚 Referencias
 
@@ -151,9 +151,9 @@ context: |
   - Backend: Node.js + NestJS + TypeScript
   - Frontend: React + Next.js
   - BD: Supabase (relacional) + DynamoDB (mensajes)
-  - IA: OpenAI GPT-4
+  - IA: OpenAI GPT-4o-mini (abstracción ILLMService)
   - Validación: Google Maps API
-  - Infra: Docker + Docker Compose + Traefik
+  - Infra: Docker + Docker Compose + Caddy 2 (AWS Lightsail)
   
   ## Dominios DDD
   - Conversations (núcleo)

@@ -1,8 +1,8 @@
 # Adresles - Visión General del Proyecto
 
-> **Última actualización**: 2026-02-10  
+> **Última actualización**: 2026-03-19  
 > **Documento fuente**: [Adresles_Business.md](../../Adresles_Business.md) - Secciones 1.1-1.6  
-> ⚠️ **MVP Actualizado**: Enfoque mock para integración con eCommerce
+> ✅ **MVP en Producción**: Backend en `backend.adresles.com` (Lightsail), Dashboard en `simulator.adresles.com` (Vercel)
 
 ---
 
@@ -14,7 +14,7 @@
 
 > **"Compra solo con nombre + teléfono, nosotros obtenemos tu dirección conversando contigo"**
 
-El comprador completa el checkout indicando únicamente **nombre** y **teléfono**. Después, un **agente IA conversacional (GPT-4)** contacta al usuario vía app Adresles para obtener la dirección mediante conversación natural, actualizándola automáticamente en el eCommerce.
+El comprador completa el checkout indicando únicamente **nombre** y **teléfono**. Después, un **agente IA conversacional (OpenAI GPT-4o-mini)** contacta al usuario para obtener la dirección mediante conversación natural, actualizándola automáticamente en el eCommerce.
 
 ---
 
@@ -117,21 +117,23 @@ IA solicita dirección + invita a registrarse para futuras compras
 
 ## 🌍 Alcance y Roadmap
 
-### Alcance Inicial (MVP) - Enfoque Mock
+### Alcance Inicial (MVP) — Desplegado en Producción
 
-> ⚠️ **Actualización v1.3**: Para el MVP, se mockea la integración con tiendas online
+> ✅ **Estado (marzo 2026)**: MVP funcional desplegado. Integración con eCommerce es mock (entrada JSON), pero el core del producto (IA + validación) funciona en producción.
 
-**Implementación Real (Core del Producto)**:
-- ✅ Conversación IA con OpenAI GPT-4 (implementación completa)
-- ✅ Validación de direcciones con Google Maps API (implementación completa)
-- ✅ App conversacional propia (no WhatsApp inicialmente)
-- ✅ Backend Node.js + NestJS
-- ✅ Frontend React + Next.js (Dashboard Admin `apps/web-admin` — Next.js 16, Tailwind v4, Shadcn/ui)
+**Implementación Real (en producción)**:
+- ✅ Conversación IA con OpenAI GPT-4o-mini (abstracción `ILLMService` — intercambiable)
+- ✅ Validación de direcciones con Google Maps API (normalización, detección de edificios)
+- ✅ Backend Node.js + NestJS 10 (API) + Worker BullMQ (Node.js puro)
+- ✅ Frontend Dashboard Admin + Simulador (`apps/web-admin` — Next.js 16, Tailwind v4, Shadcn/ui)
+- ✅ Infraestructura: AWS Lightsail + Caddy HTTPS + ECR + GitHub Actions CI/CD
+- ✅ DynamoDB en AWS con entornos separados (dev `eu-west-1`, prod `eu-central-1`)
 
-**Implementación Mock (Para MVP)**:
-- 🔄 Entrada manual de JSON para simular compras del eCommerce
+**Implementación Mock (para el MVP)**:
+- 🔄 Entrada manual de JSON para simular compras del eCommerce (`POST /api/mock/orders`)
 - 🔄 Simulación de actualización de dirección al eCommerce (log/notificación)
-- 🔄 Sin sistema de reminders automáticos (se implementará post-MVP)
+- 🔄 Sin sistema de reminders automáticos (post-MVP)
+- 🔄 Chat App (`apps/web-chat/`) no implementada — simulación integrada en Dashboard Admin
 
 ### Roadmap de Integraciones
 1. **MVP (Fase 0)**: Integración Mock - Entrada manual JSON
@@ -151,7 +153,7 @@ IA solicita dirección + invita a registrarse para futuras compras
 | **Admin/Mock UI** | **[MVP]** Ingresa JSON de compra mock + Dashboard web para visualizar pedidos, usuarios y chats |
 | **Mock eCommerce** | **[MVP]** Simulación de tienda online para actualizaciones |
 | **Adresles System** | Sistema backend (orquestador, IA, validador) |
-| **OpenAI GPT-4** | **[Real]** Motor de conversación inteligente |
+| **OpenAI GPT-4o-mini** | **[Real]** Motor de conversación inteligente (abstracción `ILLMService`) |
 | **Google Maps API** | **[Real]** Validación y normalización de direcciones |
 
 **Detalle completo**: Ver [Adresles_Business.md - Sección 2.1](../../Adresles_Business.md#21-actores-del-sistema)
@@ -186,13 +188,15 @@ IA solicita dirección + invita a registrarse para futuras compras
 
 Para detalles completos, ver **[Tech Stack](./tech-stack.md)**
 
-- **Backend**: Node.js + NestJS + TypeScript
-- **Frontend**: React 19 + Next.js 16 (Dashboard Admin — única app frontend del MVP)
-- **Base de Datos**: Supabase (PostgreSQL) + DynamoDB
-- **IA**: OpenAI GPT-4
-- **Validación**: Google Maps API
-- **Infraestructura**: Docker + Docker Compose + Traefik
-- **Deployment**: Servidor dedicado (Konsole H) + Vercel (Dashboard)
+- **Backend API**: Node.js + NestJS 10 + TypeScript (puerto 3000)
+- **Worker**: Node.js puro + BullMQ + OpenAI (sin NestJS)
+- **Frontend**: React 19 + Next.js 16 (Dashboard Admin + Simulador — única app frontend del MVP)
+- **Base de Datos**: Supabase (PostgreSQL) + AWS DynamoDB (tablas por entorno)
+- **IA**: OpenAI GPT-4o-mini (abstracción `ILLMService`)
+- **Validación**: Google Maps API (Geocoding + normalización)
+- **Infraestructura**: Docker Compose + Caddy 2 (HTTPS automático)
+- **Deployment**: AWS Lightsail `backend.adresles.com` + Vercel `simulator.adresles.com`
+- **CI/CD**: GitHub Actions → AWS ECR → SSH deploy
 
 ---
 
@@ -202,8 +206,14 @@ Para detalles completos, ver **[Tech Stack](./tech-stack.md)**
 |----------|-----|---------|
 | Arquitectura general | [ADR-001](../architecture/001-monolith-modular.md) | Monolito modular para MVP |
 | Base de datos | [ADR-002](../architecture/002-supabase-dynamodb.md) | Híbrida: Supabase + DynamoDB |
-| Framework backend | [ADR-003](../architecture/003-nestjs-backend.md) | NestJS con DDD |
-| Motor conversacional | [ADR-004](../architecture/004-openai-gpt4.md) | OpenAI GPT-4 |
+| Framework backend | [ADR-003](../architecture/003-nestjs-backend.md) | NestJS con SSE + Redis Pub/Sub |
+| Motor conversacional | [ADR-004](../architecture/004-openai-gpt4.md) | OpenAI GPT-4o-mini (abstracción `ILLMService`) |
+| Colas asíncronas | [ADR-005](../architecture/005-bullmq-worker-conversations.md) | BullMQ + Worker dedicado |
+| Real-time | [ADR-006](../architecture/006-sse-redis-pubsub.md) | SSE + Redis Pub/Sub |
+| Tipos compartidos | [ADR-007](../architecture/007-shared-types-package.md) | `packages/shared-types` |
+| Schema Prisma | [ADR-009](../architecture/009-prisma-db-package.md) | `packages/prisma-db` (fuente única) |
+| DynamoDB AWS | [ADR-010](../architecture/010-dynamodb-aws-multienv.md) | Entornos separados + IAM mínimo privilegio |
+| Producción | [ADR-011](../architecture/011-docker-ecr-lightsail-caddy.md) | Docker + ECR + Lightsail + Caddy |
 
 ---
 
@@ -229,8 +239,9 @@ Para análisis exhaustivo, arquitectura detallada, diagramas C4 completos, y esp
 
 ---
 
-**Última actualización**: 2026-02-23  
+**Última actualización**: 2026-03-19  
 **Mantenido por**: Sergio  
 **Documento fuente**: Adresles_Business.md v1.3 (10 febrero 2026)  
 **Cambios v1.3**: MVP redefinido con enfoque mock para integración eCommerce, enfocándose en el core (IA + validación)  
-**Cambios 2026-02-23**: Dashboard Admin (`apps/web-admin`) implementado — visualización de pedidos, usuarios y conversaciones
+**Cambios 2026-02-23**: Dashboard Admin (`apps/web-admin`) implementado — visualización de pedidos, usuarios y conversaciones  
+**Cambios 2026-03-19**: MVP en producción — GPT-4→GPT-4o-mini con `ILLMService`; infraestructura Lightsail+Caddy+ECR; tabla ADRs ampliada a 001-011; alcance MVP actualizado a estado real de producción

@@ -1,8 +1,8 @@
 # Memory Bank - Adresles
 
 > **Contexto persistente del proyecto para sesiones de IA**  
-> **Última actualización**: 2026-03-16  
-> ✅ **Sesión completada**: simulate-modal-smart-defaults — Defaults inteligentes en modal de simulación; auto-productos/dirección al abrir; filtro pills de registro en `UserCombobox`; patrones 7-9 documentados en `frontend-form-patterns.md`
+> **Última actualización**: 2026-03-19  
+> ✅ **MVP en Producción**: `backend.adresles.com` (Lightsail) + `simulator.adresles.com` (Vercel) — GPT-4o-mini, Google Maps, DynamoDB AWS, CI/CD GitHub Actions
 
 ## 📖 Inicio Rápido
 
@@ -21,7 +21,7 @@ Decisiones clave que guían el desarrollo del proyecto:
 | [001](./architecture/001-monolith-modular.md) | Monolito Modular vs Microservicios | ✅ Aceptada | 2026-01-30 |
 | [002](./architecture/002-supabase-dynamodb.md) | Arquitectura DB Híbrida (Supabase + DynamoDB) | ✅ Aceptada | 2026-01-30 |
 | [003](./architecture/003-nestjs-backend.md) | NestJS como Framework Backend | ✅ Aceptada | 2026-01-30 |
-| [004](./architecture/004-openai-gpt4.md) | OpenAI GPT-4 para Conversaciones | ✅ Aceptada | 2026-01-30 |
+| [004](./architecture/004-openai-gpt4.md) | OpenAI GPT-4o-mini para Conversaciones (abstracción `ILLMService`) | ✅ Aceptada | 2026-01-30 |
 | [005](./architecture/005-bullmq-worker-conversations.md) | BullMQ + Worker Dedicado para Conversaciones IA | ✅ Aceptada | 2026-02-21 |
 | [006](./architecture/006-sse-redis-pubsub.md) | SSE + Redis Pub/Sub para Notificaciones Real-Time | ✅ Aceptada | 2026-02-27 |
 | [007](./architecture/007-shared-types-package.md) | `packages/shared-types` — Fuente Única de Tipos Compartidos | ✅ Aceptada | 2026-02-28 |
@@ -155,7 +155,8 @@ memory-bank/
 │   ├── prisma-shared-package-patterns.md  # Schema+migraciones+seed en packages/prisma-db
 │   ├── worker-testing-patterns.md   # Mock Prisma/Redis/DynamoDB para specs del Worker
 │   ├── admin-table-page-patterns.md  # Patrón tabla paginada Admin: Server Component + sort/filtros en URL
-│   └── conversation-message-single-writer.md  # API escribe mensaje usuario; Worker no reescribe (evita duplicados)
+│   ├── conversation-message-single-writer.md  # API escribe mensaje usuario; Worker no reescribe (evita duplicados)
+│   └── chat-markdown-patterns.md     # Markdown en mensajes Worker; react-markdown + remark-breaks; criterio D5
 │
 ├── sessions/                   # Aprendizajes de sesiones pasadas
 │   └── (se documenta conforme avanza el proyecto)
@@ -189,7 +190,7 @@ Este memory-bank permite a la IA:
 
 ---
 
-**Última revisión**: 2026-03-16  
+**Última revisión**: 2026-03-19  
 **Mantenido por**: Sergio (desarrollo individual)  
-**Cambios recientes**: simulate-modal-smart-defaults — Defaults inteligentes en modal `/simulate`; lazy initializer + auto-fill condicional + pills de filtro; patrones 7-9 añadidos a `frontend-form-patterns.md`; sesión `2026-03-16-simulate-modal-smart-defaults.md` creada.  
+**Cambios recientes**: Coherencia memory-bank ↔ README principal — overview.md, tech-stack.md, domain-glossary.md actualizados: GPT-4→GPT-4o-mini, DynamoDB schema real, seguridad diferenciada, infraestructura producción, ADRs ampliados, `chat-markdown-patterns.md` en árbol de carpetas.  
 **Evoluciona con**: Cada decisión arquitectural o patrón significativo

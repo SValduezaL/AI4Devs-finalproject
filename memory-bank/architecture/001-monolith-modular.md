@@ -13,7 +13,7 @@
 Adresles es un MVP que necesita validar el producto en el mercado rápidamente. El equipo de desarrollo es individual (Sergio), y el proyecto requiere:
 
 - Desarrollo ágil con iteraciones rápidas
-- Deployment simplificado en servidor dedicado (Konsole H)
+- Deployment simplificado en servidor dedicado (AWS Lightsail — plan original Konsole H, ver [ADR-011](./011-docker-ecr-lightsail-caddy.md))
 - Flexibilidad para evolucionar a microservicios en el futuro
 - Límites claros entre dominios (DDD)
 

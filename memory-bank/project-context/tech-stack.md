@@ -1,6 +1,6 @@
 # Tech Stack - Adresles
 
-> **Última actualización**: 2026-03-07  
+> **Última actualización**: 2026-03-19  
 > **Documento fuente**: [Adresles_Business.md - Fase 4](../../Adresles_Business.md#fase-4-diseño-de-alto-nivel)
 
 ---
@@ -59,16 +59,21 @@
 | **Features usados** | • Auth integrado<br>• Row Level Security (RLS)<br>• Realtime subscriptions<br>• Storage (futuro) |
 | **ORM** | Prisma |
 
-#### DynamoDB
+#### DynamoDB — Esquema Real Implementado
+
+> **Nota**: El esquema implementado difiere del diseño original en `Adresles_Business.md`. Se usa una tabla única con claves simples y sin GSIs.
 
 | Característica | Detalle |
 |----------------|---------|
-| **Propósito** | Mensajes de conversaciones (alta volumetría) |
-| **Partition Key** | `conversation_id` |
-| **Sort Key** | `timestamp` |
-| **Índices GSI** | • `user_id-timestamp-index`<br>• `order_id-timestamp-index` |
+| **Propósito** | Mensajes de conversaciones + estado del Worker (alta volumetría) |
+| **Tabla** | `adresles-messages` (local) / `adresles-messages-dev` (eu-west-1) / `adresles-messages-prod` (eu-central-1) |
+| **Partition Key** | `conversationId` (UUID) |
+| **Sort Key** | `messageId` — timestamp ISO 8601 para mensajes, `'__state__'` para estado del Worker |
+| **TTL** | `expiresAt` — 90 días (DynamoDB borra automáticamente) |
+| **Índices GSI** | Sin GSIs en el MVP — búsquedas por `order_id`/`user_phone` se hacen en PostgreSQL |
+| **Nombre configurable** | `DYNAMODB_TABLE_NAME` en `.env` |
 
-**Decisión**: Ver [ADR-002: Arquitectura DB Híbrida](../architecture/002-supabase-dynamodb.md)
+**Decisión**: Ver [ADR-002: Arquitectura DB Híbrida](../architecture/002-supabase-dynamodb.md) + [ADR-010: DynamoDB AWS Multi-entorno](../architecture/010-dynamodb-aws-multienv.md)
 
 **Modelo completo**: Ver [Adresles_Business.md - Sección 3.2-3.3](../../Adresles_Business.md#32-modelo-entidad-relación)
 
@@ -218,14 +223,15 @@ adresles/
 
 ### Implementaciones de Seguridad
 
-- ✅ **Row Level Security (RLS)** en Supabase (multi-tenant)
-- ✅ **API Key + Secret** para plugins eCommerce
-- ✅ **Webhook signatures** (validación HMAC)
-- ✅ **JWT tokens** (Supabase Auth)
-- ✅ **HTTPS** forzado (Caddy + Let's Encrypt automático)
-- ✅ **Rate limiting** (Redis + middleware)
-- ✅ **Input validation** (class-validator + Zod)
-- ✅ **Secrets management** (GitHub Secrets + env vars)
+- ✅ **HTTPS** forzado (Caddy 2 + Let's Encrypt automático, TLS 1.3) — **en producción**
+- ✅ **Input validation** (`class-validator` + `ValidationPipe` global con `whitelist` + `forbidNonWhitelisted`) — **en producción**
+- ✅ **IAM mínimo privilegio** — DynamoDB: cada entorno tiene IAM User propio (`adresles-app-dev`, `adresles-app-prod`) con permisos limitados a `PutItem`, `GetItem`, `Query`, `UpdateItem` — **en producción**
+- ✅ **Secrets management** (GitHub Secrets para CI/CD, `.env.prod` en servidor, archivos `.env.dev`/`.env.prod` no comiteados) — **en producción**
+- ✅ **CORS** habilitado en `main.ts` — **en producción**
+- 🔄 **Row Level Security (RLS)** en Supabase (multi-tenant) — **diseñado, post-MVP**
+- 🔄 **API Key + Secret** para plugins eCommerce — **post-MVP**
+- 🔄 **Webhook signatures** (validación HMAC) — **post-MVP**
+- 🔄 **JWT tokens** (Supabase Auth) — **post-MVP**
 
 **Detalle completo**: Ver [Adresles_Business.md - Sección 4.10](../../Adresles_Business.md#410-seguridad)
 
@@ -305,11 +311,14 @@ Stack considerado:
 - **ADRs relacionados**:
   - [ADR-002: DB Híbrida](../architecture/002-supabase-dynamodb.md)
   - [ADR-003: NestJS Backend](../architecture/003-nestjs-backend.md)
-  - [ADR-004: OpenAI GPT-4](../architecture/004-openai-gpt4.md)
+  - [ADR-004: OpenAI GPT-4o-mini](../architecture/004-openai-gpt4.md)
+  - [ADR-010: DynamoDB AWS Multi-entorno](../architecture/010-dynamodb-aws-multienv.md)
+  - [ADR-011: Docker + ECR + Lightsail + Caddy](../architecture/011-docker-ecr-lightsail-caddy.md)
 
 ---
 
-**Última actualización**: 2026-03-16  
+**Última actualización**: 2026-03-19  
 **Mantenido por**: Sergio  
 **Versiones actualizadas**: Prisma 5.22.0 (pinned), BullMQ 5.x, ESLint 9.x, @typescript-eslint 8.x, Next.js 16.1.6, React 19.2.3, Tailwind 4.x, sonner 2.x, cmdk 1.x, react-markdown 9.x, remark-gfm 4.x, remark-breaks 4.x  
-**Cambio de infraestructura**: Konsole H + Traefik (plan) → AWS Lightsail + Caddy (real); DockerHub → AWS ECR
+**Infraestructura producción**: AWS Lightsail + Caddy 2 + AWS ECR (`eu-central-1`); Vercel para frontend  
+**Cambios 2026-03-19**: DynamoDB schema actualizado al real implementado (tabla única, sin GSIs, `messageId` como SK, `__state__`); seguridad diferenciada entre producción y post-MVP; fecha actualizada

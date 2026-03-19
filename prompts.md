@@ -1063,6 +1063,37 @@ Genera el contenido íntegramente en **español**, con un tono profesional y est
 
 **Prompt 3:**
 
+```
+# ROLE
+Actúa como un Senior Staff Engineer. Tu objetivo es redactar el documento `PR 20260319.md` replicando la excelencia técnica, el tono y la estructura visual de @PR 20260210.md  y @PR 20260302.md .
+
+# CONTEXTO DIFERENCIAL (ETAPA 3 FINAL)
+Este es el tercer hito del proyecto Adresles para entregar el Proyecto a AI4Devs con un MVP ya desplegado en producción.
+
+# DATOS DEL REPOSITORIO (INPUT PARA ANÁLISIS)
+**1. Archivos nuevos/modificados (v3 vs v2):** Inverstiga usando git cuales son los principales cambios realizados entre esta v3 final de entrega y la v2 en la que se hizo el último PR @PR 20260302.md 
+
+# ESTRATEGIA DE REDACCIÓN (PROMPT ENGINEERING)
+Para evitar un documento inabarcable debido al gran volumen de archivos, aplica estas reglas:
+1. **Abstracción de Componentes:** No menciones archivos individuales. Agrúpalos como por temáticas o dominios.
+2. **Foco en la confección final del MVP funcional y la puesta a producción:** Lo más importante ha sido la conversión a un MVP funcional conectado con OpenAI y GMaps, así como la creación de la infraestructura necesaria para ponerlo en producción.
+3. **Análisis de ADRs:** Céntrate exclusivamente en los nuevos ADRs (del 0010 y 0011) que definen la creación de las tablas DynamoDB de AWS en diferentes entornos y en la creación de la infraestructura con ECR, Lightsail y Caddy en AWS para la puesta en producción. Sin embargo, también haz referencias a los cambios que hayan sido necesarios (de existir) en el resto de ADR.
+
+# ESTRUCTURA OBLIGATORIA
+Genera el documento `PR 20260319.md` con estas secciones:
+
+1.  **Información General:** Tabla con Rama origen `rama finalproject-SVL-v3`, Rama destino `rama finalproject-SVL-v3` (aunque el PR en verdad va dirigido a la rama main de LIDR-academy/AI4Devs-finalproject), Autor, Fecha y Tipo de Cambio (Feature/Architecture).
+2.  **Resumen Ejecutivo:** "De la Especificación a la Realidad". Explica el valor de los cambios entre la v3 y la v2.
+3.  **Estadísticas de Cambios:** Tabla con distribución estimada de los mismos, agrupados por temáticas.
+4.  **Análisis por Bloques (¿Qué cambia y por qué?)**.
+5.  **Decisiones Arquitecturales (ADRs):** Lista resumida de los ADR-010 al ADR-011, así como los eventuales cambios que se hayan hecho en el resto de ADR's.
+6.  **Estructura del Proyecto:** Árbol de directorios de alto nivel (máximo 3 niveles de profundidad).
+7.  **Checklist de Validación:** (Linting, TypeScript, Prisma Sync, Mock Testing).
+8.  **Roadmap Próximo:** Nuevas Features del Road Map.
+
+Genera el contenido íntegramente en **español**, con un tono profesional y estratégico.
+```
+
 ---
 
 ## 8. Gestión de Documentación y Workflow de Desarrollo
