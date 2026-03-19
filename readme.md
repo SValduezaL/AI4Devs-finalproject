@@ -319,6 +319,70 @@ El CI/CD (`.github/workflows/deploy.yml`) se activa con push a `main`:
 1. Build y push imágenes a AWS ECR (`eu-central-1`)
 2. SSH al servidor → `docker compose pull` + `docker compose up -d`
 
+#### **Despliegue manual a producción (desde local)**
+
+Este procedimiento replica el pipeline de `.github/workflows/deploy.yml` pero ejecutándolo manualmente desde tu máquina (para ECR/Lightsail) y con un `git push` (para Vercel). No incluye secretos: los valores sensibles deben estar configurados en tu entorno o existir en el servidor.
+
+##### 1) Publicar imágenes backend y worker en AWS ECR
+
+En la raíz del monorepo:
+
+```bash
+AWS_REGION="eu-central-1"
+AWS_ACCOUNT_ID="<TU_AWS_ACCOUNT_ID>"
+ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.eu-central-1.amazonaws.com"
+IMAGE_TAG="$(git rev-parse HEAD)"
+
+# Asegúrate de tener un profile AWS configurado con permisos de ECR (por ejemplo, el profile del IAM user deploy).
+aws ecr get-login-password --region "$AWS_REGION" --profile "<TU_PROFILE_AWS_ECR>" |
+  docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+docker build -f apps/api/Dockerfile \
+  -t "$ECR_REGISTRY/adresles-api:$IMAGE_TAG" \
+  -t "$ECR_REGISTRY/adresles-api:latest" \
+  .
+
+docker push "$ECR_REGISTRY/adresles-api:$IMAGE_TAG"
+docker push "$ECR_REGISTRY/adresles-api:latest"
+
+docker build -f apps/worker/Dockerfile \
+  -t "$ECR_REGISTRY/adresles-worker:$IMAGE_TAG" \
+  -t "$ECR_REGISTRY/adresles-worker:latest" \
+  .
+
+docker push "$ECR_REGISTRY/adresles-worker:$IMAGE_TAG"
+docker push "$ECR_REGISTRY/adresles-worker:latest"
+```
+
+##### 2) Actualizar Lightsail (pull + up) con Docker Compose
+
+Entra al servidor y levanta el stack:
+
+```bash
+ssh -i "<ruta_a_tu_adresles-prod.pem>" ubuntu@<LIGHTSAIL_HOST>
+
+cd ~/adresles-prod
+
+# `ECR_REGISTRY` se toma del .env del servidor (~/adresles-prod/.env).
+ECR_REGISTRY="$(sed -n 's/^ECR_REGISTRY=//p' .env)"
+
+aws ecr get-login-password --region eu-central-1 |
+  docker login --username AWS --password-stdin "$ECR_REGISTRY"
+
+docker compose pull
+docker compose up -d --remove-orphans
+docker compose ps
+docker image prune -f
+```
+
+> Nota: asegúrate de que existen en el servidor `~/adresles-prod/docker-compose.yml` (copia del `docker-compose.prod.yml` del repo), `~/adresles-prod/Caddyfile` y `~/adresles-prod/.env.prod` (secrets reales; no comiteados).
+
+##### 3) Publicar el frontend Admin en Vercel
+
+Para que Vercel despliegue el frontend, empuja a la rama configurada como “Production Branch” en el proyecto de Vercel (por defecto, en este repo se documentó `finalproject-SVL-v3`, pero ya está configurado para que sólo despliegue los cambios en `main`):
+
+Si el despliegue que contiene tus cambios queda como “Preview”, en Vercel debes hacer **Promote to Production** para que `simulator.adresles.com` apunte a esa versión.
+
 > Ver [ADR-011](./memory-bank/architecture/011-docker-ecr-lightsail-caddy.md) para la arquitectura completa de producción.
 
 > 📖 **Arquitectura completa**: [Adresles_Business.md - Fase 4](./Adresles_Business.md#fase-4-diseño-de-alto-nivel)  
