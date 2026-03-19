@@ -2296,11 +2296,165 @@ A continuación se presentan 3 historias de usuario principales basadas en los c
 
 > Documenta 3 de los tickets de trabajo principales del desarrollo, uno de backend, uno de frontend, y uno de bases de datos. Da todo el detalle requerido para desarrollar la tarea de inicio a fin teniendo en cuenta las buenas prácticas al respecto.
 
-**Ticket 1**
+**Ticket 1 — Base de datos (`infra-prisma-shared-schema`)**
 
-**Ticket 2**
+**ID**: `infra-prisma-shared-schema`  
+**App**: `packages/` (nuevo workspace package) + `apps/api` + `apps/worker` 
+**Prerrequisitos**: `CU03-B1` completado (Opción C activa y el `worker` apuntaba al schema del `api`)  
+**Tipo**: Refactorización de infraestructura (sin cambios funcionales en producción)
 
-**Ticket 3**
+**Por qué es importante (visión de producto)**
+Garantiza que todo el monorepo use el mismo schema de Prisma como fuente única de verdad. Esto elimina drift de tipos entre `api` y `worker` y permite que Turborepo gestione correctamente el grafo de dependencias cuando el schema cambia.
+
+**Historia de usuario (resumen)**
+Como desarrollador, necesito que el schema de Prisma viva en `packages/prisma-db` para que cualquier app lo declare explícitamente y el monorepo mantenga coherencia.
+
+**Qué cambia**
+- Crear el package workspace `packages/prisma-db` que expone `schema.prisma` como única fuente de verdad (sin paso de compilación).
+- Mover `apps/api/prisma/schema.prisma` → `packages/prisma-db/schema.prisma`.
+- En `apps/api/package.json` añadir `@adresles/prisma-db` en `devDependencies` y configurar `prisma.schema` apuntando al nuevo path.
+- En `apps/worker/package.json` añadir `@adresles/prisma-db` en `devDependencies` y actualizar `prisma.schema` para que apunte al mismo path.
+- Mantener migraciones en `apps/api/prisma/migrations/` (API sigue siendo propietaria de migraciones).
+- Mantener `db:generate` en el `package.json` de la raíz para regenerar clientes en ambas apps.
+
+**Estructura objetivo**
+`packages/`
+- `prisma-db/` (nuevo): `package.json` + `schema.prisma`
+
+`apps/`
+- `api/`: migra aquí; apunta a `packages/prisma-db/schema.prisma`
+- `worker/`: no migra; genera cliente con el mismo schema compartido
+
+**Definición de Hecho (DoD)**
+- [ ] Crear `packages/prisma-db/package.json` con `name: "@adresles/prisma-db"`, `private: true` y `files: ["schema.prisma"]`.
+- [ ] Mover `apps/api/prisma/schema.prisma` a `packages/prisma-db/schema.prisma`.
+- [ ] Actualizar `apps/api/package.json`: añadir `"@adresles/prisma-db": "workspace:*"` en `devDependencies` y configurar `"prisma": { "schema": "../../packages/prisma-db/schema.prisma" }`.
+- [ ] Actualizar `apps/worker/package.json`: añadir `"@adresles/prisma-db": "workspace:*"` en `devDependencies` y configurar `"prisma": { "schema": "../../packages/prisma-db/schema.prisma" }`.
+- [ ] Ejecutar `pnpm install` en la raíz del monorepo.
+- [ ] Ejecutar `pnpm --filter api exec prisma generate` y verificar generación correcta.
+- [ ] Ejecutar `pnpm --filter worker exec prisma generate` y verificar generación correcta.
+- [ ] Verificar que `pnpm --filter api exec prisma migrate dev` funciona con el schema en su nueva ubicación.
+- [ ] Ejecutar `npx tsc --noEmit` en `apps/api` y `apps/worker` sin errores.
+- [ ] Ejecutar `pnpm test` en API y Worker para asegurar que no hay regresiones.
+
+**Plan de verificación**
+- Generación de clientes Prisma en `api` y `worker` sin drift.
+- Migraciones aplicándose desde `apps/api`.
+- Compilación TypeScript (`tsc --noEmit`) sin fallos.
+- Tests pasando en `api` y `worker`.
+
+**Plan de reversión**
+- Volver `schema.prisma` a `apps/api/prisma/schema.prisma`.
+- Restaurar `prisma.schema` en `apps/api` y `apps/worker` a la configuración previa.
+- Eliminar `packages/prisma-db` si no se requiere tras la reversión.
+
+---
+
+**Ticket 2 — Backend (`CU03-B1-worker-db-sync`)**
+
+**ID**: `CU03-B1-worker-db-sync`  
+**App**: `apps/worker` (BullMQ Worker) + `apps/api` (schema + `OrdersService`)
+**Prerrequisitos**: `CU03-A6` completado (chat SSE de extremo a extremo funcional)
+**ADRs afectados**: `ADR-005` (Worker BullMQ), `ADR-006` (SSE + Redis Pub/Sub)
+
+**Por qué es importante (visión de producto)**
+Cierra el gap entre lo que se muestra en el chat y lo que queda registrado en base de datos: al confirmar dirección, el pedido debe quedar en el estado final del MVP (`READY_TO_PROCESS`) con trazabilidad del origen del cambio.
+
+**Historia de usuario (resumen)**
+Como sistema, quiero actualizar el pedido a `READY_TO_PROCESS` con `syncedAt` y `statusSource` tras confirmar la dirección del usuario para obtener trazabilidad y coherencia del estado final.
+
+**Qué cambia**
+- `apps/api/prisma/schema.prisma`: añadir enum `StatusSource { ADRESLES STORE }` y campo `statusSource` en `Order`.
+- `apps/worker/prisma/schema.prisma`: sincronizar el schema con el del `api` (el worker solo regenera cliente; no migra).
+- `apps/api/src/orders/orders.service.ts`: actualizar `updateStatus()` para aceptar `statusSource`; en `createFromMock()`, para pedidos `TRADITIONAL`, setear `syncedAt` y `statusSource: 'STORE'`; eliminar el update posterior a `COMPLETED` en el flujo `TRADITIONAL`.
+- `apps/worker/src/processors/conversation.processor.ts`: en `finalizeAddress()`, setear `syncedAt` y `statusSource: 'ADRESLES'`.
+- `apps/worker/src/services/address.service.ts`: `buildSyncSuccessMessage()` recibe `storeName` y genera un mensaje con la tienda indicada; `simulateEcommerceSync()` acepta `storeName` y mejora logs.
+
+**Definición de Hecho (DoD)**
+Bloque 1: schema y migración (`apps/api`)
+- [ ] Añadir enum `StatusSource { ADRESLES STORE }`.
+- [ ] Añadir `statusSource StatusSource? @map("status_source")` en `Order`.
+- [ ] Ejecutar migración `add-order-status-source`.
+- [ ] Ejecutar `prisma generate` en `apps/api`.
+
+Bloque 2: schema del worker (`apps/worker`)
+- [ ] Reemplazar el schema del worker por el del API.
+- [ ] Ejecutar `prisma generate` en `apps/worker`.
+- [ ] Ejecutar `npx tsc --noEmit` en `apps/worker`.
+
+Bloque 3: API (`apps/api`)
+- [ ] Actualizar `OrdersService.updateStatus()` para incluir `statusSource`.
+- [ ] Actualizar `createFromMock()` para setear `syncedAt` y `statusSource: 'STORE'` en `TRADITIONAL`.
+- [ ] Eliminar update a `COMPLETED` en `MockOrdersService.processTraditionalOrder()`.
+- [ ] Actualizar tests afectados.
+- [ ] Ejecutar `npx tsc --noEmit` en `apps/api`.
+
+Bloque 4: Worker (`apps/worker`)
+- [ ] Actualizar `finalizeAddress()` con `syncedAt` y `statusSource: 'ADRESLES'`.
+- [ ] Actualizar `buildSyncSuccessMessage()` para incluir `storeName`.
+- [ ] Actualizar llamadas a `buildSyncSuccessMessage()` y `simulateEcommerceSync()`.
+
+Bloque 5: verificación de extremo a extremo
+- [ ] Ejecutar simulación completa desde `/simulate`.
+- [ ] Confirmar que el chat muestra la confirmación con el nombre de la tienda.
+- [ ] Confirmar que el chat se cierra correctamente tras `conversation:complete`.
+- [ ] Confirmar que el pedido aparece con estado `READY_TO_PROCESS`.
+- [ ] Verificar en DB que `orders` tenga `status=READY_TO_PROCESS`, `synced_at` y `status_source='ADRESLES'`.
+
+**Tests unitarios mínimos**
+- [ ] `buildSyncSuccessMessage()`: comprobar que `storeName` aparece correctamente.
+- [ ] `OrdersService.updateStatus()`: comprobar que `statusSource` se propaga a `prisma.order.update`.
+
+**Plan de reversión**
+La columna `status_source` es nullable (`StatusSource?`). Si se requiere revertir, eliminarla mediante una migración que quite la columna sin afectar el flujo principal.
+
+---
+
+**Ticket 3 — Frontend (`CU03-A6-simulation-chat`)**
+
+**ID**: `CU03-A6-simulation-chat`  
+**App**: `apps/web-admin` (Next.js 16; componentes cliente) 
+**Prerrequisitos**: `CU03-A2` completado (endpoint SSE disponible), `CU03-A5` completado (`SimulationPage` recibe `conversationId`)
+
+**Por qué es importante (visión de producto)**
+Hace funcional la simulación completa dentro de `/simulate`: muestra mensajes del agente en tiempo real y permite responder como usuario simulado, cerrando el loop sin intervención manual del backend.
+
+**Historia de usuario (resumen)**
+Como administrador del Dashboard Admin, quiero ver los mensajes en tiempo real y responder para simular el proceso de obtención de dirección de entrega.
+
+**Qué cambia**
+- Nuevo componente `SimulationChat` que abre `EventSource` para SSE, abre el SSE antes de cargar historial (para evitar condiciones de carrera), carga historial inicial con `GET /api/mock/conversations/:id/history`, añade mensajes SSE de forma incremental, omite mensajes con `role: 'system'` en el chat visible, muestra indicador de escritura mientras el agente responde, automatiza el desplazamiento al último mensaje, deshabilita la entrada mientras `isTyping` o `isSending` están activos y reemplaza la entrada por un estado final al recibir `conversation:complete`.
+- Nuevo componente `TypingIndicator` para el “agente escribiendo”.
+- Extensión del cliente API en `apps/web-admin/src/lib/api.ts`:
+- `getConversationHistory()` tipado como `Promise<ConversationMessage[]>` (arreglo directo).
+- `sendReply()` con `POST /api/mock/conversations/:id/reply`.
+- Reestructuración de `simulation-page.tsx`: unifica “zona de chat” y “zona de entrada” bajo `SimulationChat` y ajusta wrappers a `flex flex-col overflow-hidden` para que el desplazamiento sea interno al componente.
+
+**Orden estricto para evitar condiciones de carrera**
+1. Abrir el `EventSource` primero.
+2. Después solicitar el historial.
+3. Incorporar los eventos SSE posteriores sin sobrescribir el estado inicial.
+
+**Definición de Hecho (DoD)**
+Nuevos archivos
+- [ ] Crear `typing-indicator.tsx`.
+- [ ] Crear `simulation-chat.tsx` con suscripción SSE, carga de historial tras abrir SSE, desplazamiento automático e indicador de escritura y estado final (`COMPLETED`, `ESCALATED`, `TIMEOUT`).
+
+Modificaciones
+- [ ] En `apps/web-admin/src/lib/api.ts`: añadir `getConversationHistory()` y `sendReply()`.
+- [ ] En `simulation-page.tsx`: eliminar la separación previa de “zona B” y “zona C” y renderizar `SimulationChat` con `conversationId`.
+
+Verificación funcional
+- [ ] Mensajes del agente aparecen en tiempo real.
+- [ ] El indicador de escritura aparece al enviar y desaparece al recibir respuesta.
+- [ ] El desplazamiento automático lleva al último mensaje.
+- [ ] La entrada se deshabilita mientras haya espera/envío.
+- [ ] Al recibir `conversation:complete`, se muestra el estado final y desaparece la entrada.
+- [ ] Compilación TypeScript sin errores (`tsc --noEmit`).
+
+**Plan de reversión**
+- Restaurar el layout anterior de `simulation-page.tsx`.
+- Eliminar los componentes `typing-indicator.tsx` y `simulation-chat.tsx` creados para esta iteración.
 
 ---
 
